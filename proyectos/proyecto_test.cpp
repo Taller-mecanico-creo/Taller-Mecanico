@@ -1,4 +1,5 @@
 #include <iostream>
+#include <windows.h>
 using namespace std;
 
 void menuPrincipal () {
@@ -78,6 +79,8 @@ void limpiarPantalla () {
     #endif
 }
 int main () {
+    SetConsoleOutputCP(65001);
+    
     int opcion = 0;
 
     do {
