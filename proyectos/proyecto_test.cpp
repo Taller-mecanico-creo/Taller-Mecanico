@@ -79,13 +79,36 @@ struct SistemaTaller{
     int siguienteIdOrden;
 };
 
-//logica
+//=========================
+//      CAPA LOGICA
+//=========================
 
+
+//==========================================
+//3.0 CAPA DE LOGICA Funciones del sistema
+//==========================================
+
+//3.0 Inializar el sistema (reserva capacidad 4 para entidades y 2 para detalles)
+void inicalizarSistema(SistemaTaller& s, const char* nombre, const char* rif, const char* direccion, const char* telefono){
+    //1. Copiar datos del taller caracter a caracter
+    for(int i = 0; i < 99 && nombre[i] != '\0'; i++))
+}
+
+
+//vehiculos
 Vehiculo* agregarVehiculo(SistemaTaller* s, Vehiculo datos);
 
 Vehiculo* buscarVehiculoPorID(SistemaTaller* s, int id);
 
 Vehiculo* buscarVehiculoPorPlaca(SistemaTaller* s, const char* placa);
+
+Vehiculo** buscarVehiculosPorPropietario(SistemaTaller* s, const char* subcadena, int* cantidad);
+
+Vehiculo** listarVehiculos(SistemaTaller* s, int* cantidad);
+
+bool actualizarVehiculo(SistemaTaller* s, int id, Vehiculo datos);
+
+bool eliminarVehiculo(SistemaTaller* s, int id);
 
 //menus
 void menuPrincipal () {
