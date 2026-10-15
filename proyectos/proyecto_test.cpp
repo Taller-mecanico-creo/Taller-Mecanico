@@ -2,6 +2,25 @@
 #include <windows.h>
 using namespace std;
 
+//mouske herramienta misteriosa que me ayudara mas tarde
+void limpiar(){
+    #ifdef _WIN32
+        system("cls");
+    #else
+        system("clear");
+    #endif
+}
+
+void pausarylimpiar(){
+    cout << "\nPresiona Enter para continuar...";
+    cin.get();
+    #ifdef _WIN32
+        system("cls");//si estamos en windows -, limpia con 'cls'
+    #else
+        system("clear");//sino (linux/mac), limpia con 'clear'
+    #endif
+}
+
 //sturcts
 struct Taller{
     char nombre[100];
@@ -130,21 +149,172 @@ void inicalizarSistema(SistemaTaller* s, const char* nombre, const char* rif, co
     s->siguienteIdOrden = 1;
 }
 
-Vehiculo* agregarVehiculo(SistemaTaller* s, Vehiculo datos);
+Vehiculo* agregarVehiculo(SistemaTaller* s, Vehiculo datos){
+    //1. Verificar si el arreglo esta lleno 
+    if (s->numVehiculos >= s->capacidadVehiculos){
+        //1.1 Duplicar la capacidad
+        int nuevaCapacidad = s->capacidadVehiculos * 2;
 
-Vehiculo* buscarVehiculoPorID(SistemaTaller* s, int id);
+        //1.2 Crear un nuevo arreglo con la nueva capacidad
+        Vehiculo* nuevosVehiculos = new Vehiculo[nuevaCapacidad];
 
-Vehiculo* buscarVehiculoPorPlaca(SistemaTaller* s, const char* placa);
+        //1.3 Copiar los datos del arreglo viejo al nuevo 
+        for (int i = 0; i < s->numVehiculos; i++){
+            nuevosVehiculos[i] = s->vehiculos[i];
+        }
 
-Vehiculo** buscarVehiculosPorPropietario(SistemaTaller* s, const char* subcadena, int* cantidad);
+        //1.4 Liberar la memoria del arreglo viejo
+        delete[] s->vehiculos;
 
-Vehiculo** listarVehiculos(SistemaTaller* s, int* cantidad);
+        //1.5 Actualizar el puntero y la capacidad
+        s->vehiculos = nuevosVehiculos;
+        s->capacidadVehiculos = nuevaCapacidad;
+    }
+
+    //2. Asignar un ID autoincremental al nuevo vehículo
+    datos.id = s->siguienteIdVehiculo;
+    s->siguienteIdVehiculo++;
+
+    //3. Guardar el nuevo vehículo en el arreglo
+    s->vehiculos[s->numVehiculos] = datos;
+
+    //4. Incrementar el contador de vehículos
+    s->numVehiculos++;
+
+    //5. Retornar un puntero al nuevo vehículo
+    return &(s->vehiculos[s->numVehiculos -1]);
+}
+
+Vehiculo* buscarVehiculoPorID(SistemaTaller* s, int id){
+    for(int i = 0; i < s->numVehiculos; i++){
+        if (s->vehiculos[i].id == id){
+            //retornar la direccion de memoria del vehiculo encontrado
+            return &(s->vehiculos[i]);
+        }
+    }
+    //Si recorrimos todo y no esta
+    return nullptr;
+}
+
+Vehiculo* buscarVehiculoPorPlaca(SistemaTaller* s, const char* placa){
+    //Recorrer el arreglo de vehiculos
+    for(int i = 0; i < s->numVehiculos; i++){
+
+        //comparamos la placa del vehiculo acual caracter por caracter
+        const char* p1 = s->vehiculos[i].placa;
+        const char* p2 = placa;
+        bool iguales = true;
+
+        int j = 0;
+        while (p1[j] != '\0' && p2[j] != '\0'){
+            if (p1[j] != p2[j]){
+                iguales = false;
+                break;
+            }
+            j++;
+        }
+        
+        //Validamos que ambas hayan terminado al mismo tiempo
+        if (iguales && p1[j] == '\0' && p2[j] == '\0'){
+            //encontramos el vehiculo, retornamos su direccion de memoria
+            return &(s->vehiculos[i]);
+        }
+    }
+    //Si recorrimos todo el taller y ninguna placa coincide
+    return nullptr;
+}
+
+Vehiculo** buscarVehiculosPorPropietario(SistemaTaller* s, const char* subcadena, int* cantidad){
+    //1. Primero contamos cuantos vehiculos coinciden con la subcadena del nombre del propietario
+    int encontrados = 0;
+    for(int i = 0; i < s->numVehiculos; i++){
+        //funcion aux interna o logica para buscar subcadena
+        //Verificamos si la subcadena esta dentro de nombrePropietario
+        const char* nombre = s->vehiculos[i].nombrePropietario;
+        const char* sub = subcadena;
+
+        bool coincide = false;
+        for(int j = 0; nombre[j] != '\0'; j++){
+            int k = 0;
+            while (nombre[j + k] != '\0' && sub[k] != '\0' && nombre[j + k] == sub[k]){
+                k++;
+            }
+            if (sub[k] == '\0'){ //encontramos la coincidencia
+                coincide = true;
+                break;
+            }
+        }
+        if (coincide){
+            encontrados++;
+        }
+    }
+
+    //Si no se encontro ninguno, devolvemos cantidad en 0 y nullptr
+    *cantidad = 0;
+    if (encontrados == 0){
+        return nullptr;
+    }
+
+    //2.Reservamos memoria dinamica para un arreglo de punteros del tamanio exacto
+    Vehiculo** resultados = new Vehiculo*[encontrados];
+
+    //3.Volvemos a recorrer para llenar el arreglo con las direcciones de memoria
+    int index = 0;
+    for(int i = 0; i < s->numVehiculos; i++){
+        const char* nombre = s->vehiculos[i].nombrePropietario;
+        const char* sub = subcadena;
+
+        bool coincide = false;
+        for(int j = 0; nombre[j] != '\0'; j++){
+            int k = 0;
+            while (nombre[j + k] != '\0' && sub[k] != '\0' && nombre[j + k] == sub[k]){
+                k++;
+            }
+            if (sub[k] == '\0'){ //encontramos la coincidencia
+                coincide = true;
+                break;
+            }
+        }
+        if (coincide){
+            resultados[index] = &(s->vehiculos[i]);
+            index++;
+        }
+    }
+    //Actualizamos el parametro de salida con la cantidad total hallada
+    *cantidad = encontrados;
+    return resultados;
+}
+
+Vehiculo** listarVehiculos(SistemaTaller* s, int* cantidad){
+    //1.Verificamos si el taller esta vacio
+    if (s->numVehiculos == 0){
+        *cantidad = 0;
+        return nullptr;
+    }
+
+    //2.Definimos la cantidad encontrada como el total de vehiculos actuales
+    *cantidad = s->numVehiculos;
+
+    //3, Reservamos memoria dinamica para un arreglo de punteros del tamanio exacto
+    Vehiculo** lista = new Vehiculo*[s->numVehiculos];
+
+    //4. Llenamos el arreglo con las direcciones de memoria de cada vegiculo existente
+    for(int i = 0; i < s->numVehiculos; i++){
+        lista[i] = &(s->vehiculos[i]);
+    }
+
+    //Retornamos el arreglo de punteros
+    return lista;
+}
 
 bool actualizarVehiculo(SistemaTaller* s, int id, Vehiculo datos);
 
 bool eliminarVehiculo(SistemaTaller* s, int id);
 
-//menus
+//=========================
+//      CAPA VISUAL
+//=========================
+
 void menuPrincipal () {
     cout << "╔═══════════════════════════════════════════╗" << endl;
     cout << "║    SISTEMA DE GESTIÓN DE TALLER           ║" << endl;
@@ -214,18 +384,11 @@ void menuÓrdenes () {
     cout << "╚═══════════════════════════════════════════╝" << endl;
 }
 
-void limpiarPantalla () {
-    #ifdef _WIN32
-        system("cls");
-    #else
-        system("clear");
-    #endif
-}
-
 int main () {
     SetConsoleOutputCP(65001);
     
     int opcion = 0;
+    int opcion2 = 0;
 
     do {
     menuPrincipal();
@@ -239,70 +402,71 @@ int main () {
 
     switch (opcion) {
         case 1: {
-            limpiarPantalla();
+            limpiar();
             menuVehículos();
-            cin >> opcion;
-            switch (opcion) {
+            cin >> opcion2;
+            switch (opcion2) {
                 case 1: {
-                    limpiarPantalla();
+                    pausarylimpiar();
+                    limpiar();
                     cout << "Probandou comandou carrou1" << endl;
                     break;
                 } case 2: {
-                    limpiarPantalla();
+                    limpiar();
                     cout << "Probandou comandou carrou2" << endl;
                     break;
                 } case 3: {
-                    limpiarPantalla();
+                    limpiar();
                     cout << "Probandou comandou carrou3" << endl;
                     break;
                 } case 4: {
-                    limpiarPantalla();
+                    pausarylimpiar();
                     cout << "Probandou comandou carrou4" << endl;
                     break;
                 } case 5: {
-                    limpiarPantalla();
+                    pausarylimpiar();
                     cout << "Probandou comandou carrou5" << endl;
                     break;
                 } case 6: {
-                    limpiarPantalla();
+                    pausarylimpiar();
                     cout << "Probandou comandou carrou6" << endl;
                     break;
                 } case 7: {
-                    limpiarPantalla();
+                    pausarylimpiar();
                     cout << "Probandou comandou carrou7" << endl;
                     break;
                 } case 0: {
-                    limpiarPantalla();
+                    pausarylimpiar();
                     break;
                 }
             break;
 
         } case 2: {
-            limpiarPantalla();
+            limpiar();
             menuMecánicos();
-            cin >> opcion;
-            limpiarPantalla();
+            cin >> opcion2;
+            limpiar();
             break;
 
         } case 3: {
-            limpiarPantalla();
+            limpiar();
             menuRepuestos();
             cin >> opcion;
-            limpiarPantalla();
+            limpiar();
             break;
 
         } case 4: {
-            limpiarPantalla();
+            limpiar();
             menuÓrdenes();
             cin >> opcion;
-            limpiarPantalla();
+            limpiar();
             break;
 
         } case 0: {
             cout << "Cerrando programa. Hasta pronto..." << endl;
             break;
         } default:
-            limpiarPantalla();
+            pausarylimpiar();
             cout << "Escoja una opción válida (0-4).\n" << endl;
         break;
     }
