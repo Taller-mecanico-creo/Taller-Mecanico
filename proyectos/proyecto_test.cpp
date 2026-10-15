@@ -105,11 +105,11 @@ struct SistemaTaller{
 
 
 //==========================================
-//3.0 CAPA DE LOGICA Funciones del sistema
+//       CAPA DE LOGICA: VEHICULOS
 //==========================================
 
-//3.0 Inializar el sistema (reserva capacidad 4 para entidades y 2 para detalles)
-void inicalizarSistema(SistemaTaller* s, const char* nombre, const char* rif, const char* direccion, const char* telefono){
+//Inializar el sistema (reserva capacidad 4 para entidades y 2 para detalles)
+void inicializarSistema(SistemaTaller* s, const char* nombre, const char* rif, const char* direccion, const char* telefono){
     
     //1. Copiar datos del taller caracter a caracter
     for(int i = 0; i < 99 && nombre[i] != '\0'; i++) s->taller.nombre[i] = nombre[i];
@@ -307,9 +307,79 @@ Vehiculo** listarVehiculos(SistemaTaller* s, int* cantidad){
     return lista;
 }
 
-bool actualizarVehiculo(SistemaTaller* s, int id, Vehiculo datos);
+bool actualizarVehiculo(SistemaTaller* s, int id, Vehiculo nuevosDatos){
+    //1.Buscamos el vehiculo en el arreglo
+    Vehiculo* v = buscarVehiculoPorID(s, id);
 
-bool eliminarVehiculo(SistemaTaller* s, int id);
+    //Si no existe, retornamos falso
+    if (v == nullptr){
+        return false;
+    }
+
+    //Actualizamos los campos numericos directamente
+    v->anio = nuevosDatos.anio;
+
+    //Copiamos la placa caracter por caracter
+    int i = 0;
+    while(nuevosDatos.placa[i] != '\0' && i < 9){
+        v->placa[i] = nuevosDatos.placa[i];
+        i++;
+    }
+    v->placa[i] = '\0';
+
+    //Copiamos la marca caracter por caracter
+    i = 0;
+    while(nuevosDatos.marca[i] != '\0' && i < 49){
+        v->marca[i] = nuevosDatos.marca[i];
+        i++;
+    }
+    v->marca[i] = '\0';
+
+    //Copiamos el modelo caracter por caracter
+    i = 0;
+    while(nuevosDatos.modelo[i] != '\0' && i < 49){
+        v->modelo[i] = nuevosDatos.modelo[i];
+        i++;
+    }
+    v->modelo[i] = '\0';
+
+    //Copiamos el nombre del propietario caracter a caracter
+    i = 0;
+    while(nuevosDatos.nombrePropietario[i] != '\0' && i < 99){
+        v->nombrePropietario[i] = nuevosDatos.nombrePropietario[i];
+        i++;
+    }
+    v->nombrePropietario[i] = '\0';
+
+    return true; //actualizacion exitante
+}
+
+bool eliminarVehiculo(SistemaTaller* s, int id){
+    int indiceEncontrado = -1;
+
+    //Buscamos el indice exacto del vehiculo en el arreglo
+    for(int i = 0; i < s->numVehiculos; i++){
+        if (s->vehiculos[i].id == id){
+            indiceEncontrado = i;
+            break;
+        }
+    }
+
+    //Si no se encuentra, retornamos falso
+    if(indiceEncontrado == -1){
+        return false;
+    }
+
+    //desplazamos los elemntos hacia la izquierda para "rellenar" el espacio
+    for(int i = indiceEncontrado; i < s->numVehiculos - 1; i++){
+        s->vehiculos[i] = s->vehiculos[i + 1];
+    }
+
+    //Reducimos el contador total de vehiculos
+    s->numVehiculos--;
+
+    return true; //Eliminacion exitante
+}
 
 //=========================
 //      CAPA VISUAL
@@ -341,6 +411,31 @@ void menuVehículos () {
     cout << "║ 7. Mostrar lista de vehículos             ║" << endl;
     cout << "║ 0. Volver al menú principal               ║" << endl;
     cout << "╚═══════════════════════════════════════════╝" << endl;
+}
+
+void uiRegistrarVehiculo(SistemaTaller* s){
+    limpiar();
+    cout << "=== REGISTRAR NUEVO VEHICULO ===" << endl;
+    Vehiculo nuevo;
+
+    cout << "Placa: ";
+    cin >> nuevo.placa;
+    cout << "Marca: ";
+    cin >> nuevo.marca;
+    cout << "Modelo: ";
+    cin >> nuevo.marca;
+    cout << "Año: ";
+    cin >> nuevo.anio;
+    cout << "Kilometraje: ";
+    cin >> nuevo.kilometraje;
+    cout << "Nombre del Propietario: ";
+    cin.ignore();
+    cin.getline(nuevo.nombrePropietario, 100);
+
+    agregarVehiculo(s, nuevo);
+    cout << "\nVehiculo registrado exitosamente con ID asignado!" << endl;
+    pausarylimpiar();
+
 }
 
 void menuMecánicos () {
@@ -387,12 +482,18 @@ void menuÓrdenes () {
 int main () {
     SetConsoleOutputCP(65001);
     
+
+    //Iniciamos el sistema
+    SistemaTaller miTaller;
+    inicializarSistema(&miTaller, "Autoservicio El Wikiti", "J-12345678-9", "Maracaibo", "0414-1234567");
+    
     int opcion = 0;
     int opcion2 = 0;
 
     do {
-    menuPrincipal();
-    cin >> opcion;
+        limpiar();
+        menuPrincipal();
+        cin >> opcion;
 
     /*if (!(cin >> opcion)) {
         cout << "Entrada Inválida." << endl;
@@ -400,77 +501,84 @@ int main () {
         cin.ignore(10000,'\n');
     }*/
 
-    switch (opcion) {
-        case 1: {
-            limpiar();
-            menuVehículos();
-            cin >> opcion2;
-            switch (opcion2) {
-                case 1: {
-                    pausarylimpiar();
+        switch (opcion) {
+            case 1: {
+                do{
                     limpiar();
-                    cout << "Probandou comandou carrou1" << endl;
-                    break;
-                } case 2: {
-                    limpiar();
-                    cout << "Probandou comandou carrou2" << endl;
-                    break;
-                } case 3: {
-                    limpiar();
-                    cout << "Probandou comandou carrou3" << endl;
-                    break;
-                } case 4: {
-                    pausarylimpiar();
-                    cout << "Probandou comandou carrou4" << endl;
-                    break;
-                } case 5: {
-                    pausarylimpiar();
-                    cout << "Probandou comandou carrou5" << endl;
-                    break;
-                } case 6: {
-                    pausarylimpiar();
-                    cout << "Probandou comandou carrou6" << endl;
-                    break;
-                } case 7: {
-                    pausarylimpiar();
-                    cout << "Probandou comandou carrou7" << endl;
-                    break;
-                } case 0: {
-                    pausarylimpiar();
-                    break;
-                }
-            break;
-
-        } case 2: {
+                    menuVehículos();
+                    cin >> opcion2;
+                
+                    switch (opcion2) {
+                        case 1: {
+                            uiRegistrarVehiculo(&miTaller);
+                            break;
+                        } case 2: {
+                            limpiar();
+                            cout << "Probandou comandou carrou2" << endl;
+                            break;
+                        } case 3: {
+                            limpiar();
+                            cout << "Probandou comandou carrou3" << endl;
+                            break;
+                        } case 4: {
+                            pausarylimpiar();
+                            cout << "Probandou comandou carrou4" << endl;
+                            break; 
+                        } case 5: {
+                            pausarylimpiar();
+                            cout << "Probandou comandou carrou5" << endl;
+                            break;
+                        } case 6: {
+                            pausarylimpiar();
+                            cout << "Probandou comandou carrou6" << endl;
+                            break;
+                        } case 7: {
+                            pausarylimpiar();
+                            cout << "Probandou comandou carrou7" << endl;
+                            break;
+                        } case 0: {
+                            break;
+                        }
+                        default: {
+                            cout << "Opcion invalida." << endl;
+                            pausarylimpiar();
+                            break;
+                        }
+                    }
+                }while(opcion2 != 0);
+                limpiar();
+                break;
+            }case 2: {
             limpiar();
             menuMecánicos();
             cin >> opcion2;
             limpiar();
             break;
 
-        } case 3: {
+            } case 3: {
             limpiar();
             menuRepuestos();
             cin >> opcion;
             limpiar();
             break;
 
-        } case 4: {
+            } case 4: {
             limpiar();
             menuÓrdenes();
             cin >> opcion;
             limpiar();
             break;
 
-        } case 0: {
-            cout << "Cerrando programa. Hasta pronto..." << endl;
+            } case 0: {
+                cout << "Cerrando programa. Hasta pronto..." << endl;
+                break;
+            } default:
+                pausarylimpiar();
+                cout << "Escoja una opción válida (0-4).\n" << endl;
             break;
-        } default:
-            pausarylimpiar();
-            cout << "Escoja una opción válida (0-4).\n" << endl;
-        break;
-    }
-}
-} while (opcion != 0);
+        }
+
+    } while (opcion != 0);
+
 return 0;
 }
