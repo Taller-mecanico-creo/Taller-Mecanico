@@ -66,11 +66,12 @@ struct OrdenServicio {
 };
 
 struct SistemaTaller{
-    Taller taller;          //Datos del taller
-    Vehiculo* vehiculos; int numVehiculos; int capacidadVehiculos;
-    Mecanico* mecanicos; int numMecanicos; int capacidadMecanicos;
-    Repuesto* repuestos; int numRepuestos; int capacidadRepuestos;
-    OrdenServicio* ordenes; int numOrdenes; int capacidadOrdenes;
+    Taller taller;                  //Datos del taller
+    
+    Vehiculo*      vehiculos;    int numVehiculos; int capacidadVehiculos;
+    Mecanico*      mecanicos;    int numMecanicos; int capacidadMecanicos;
+    Repuesto*      repuestos;    int numRepuestos; int capacidadRepuestos;
+    OrdenServicio* ordenes;      int numOrdenes;   int capacidadOrdenes;
 
     //Contadores para IDs autoincrementales
     int siguienteIdVehiculo;
@@ -89,13 +90,46 @@ struct SistemaTaller{
 //==========================================
 
 //3.0 Inializar el sistema (reserva capacidad 4 para entidades y 2 para detalles)
-void inicalizarSistema(SistemaTaller& s, const char* nombre, const char* rif, const char* direccion, const char* telefono){
+void inicalizarSistema(SistemaTaller* s, const char* nombre, const char* rif, const char* direccion, const char* telefono){
+    
     //1. Copiar datos del taller caracter a caracter
-    for(int i = 0; i < 99 && nombre[i] != '\0'; i++))
+    for(int i = 0; i < 99 && nombre[i] != '\0'; i++) s->taller.nombre[i] = nombre[i];
+    s->taller.nombre[99] = '\0';
+
+    for(int i = 0; i < 19 && rif[i] != '\0'; i++) s->taller.rif[i] = rif[i];
+    s->taller.rif[19] = '\0';
+
+    for(int i = 0; i < 199 && direccion[i] != '\0'; i++) s->taller.direccion[i] = direccion[i];
+    s->taller.direccion[199] = '\0';
+
+    for(int i = 0; i < 19 && telefono[i] != '\0'; i++) s->taller.telefono[i] = telefono[i];
+    s->taller.telefono[19] = '\0';
+
+    //2. Poner contadores en cero
+    s->numVehiculos = 0;
+    s->numMecanicos = 0;
+    s->numRepuestos = 0;
+    s->numOrdenes = 0;
+
+    //3. Capacidades iniciales en en 4
+    s->capacidadVehiculos = 4;
+    s->capacidadMecanicos = 4;
+    s->capacidadRepuestos = 4;
+    s->capacidadOrdenes = 4;
+
+    //4. Reservar memoria dinamica con new
+    s->vehiculos = new Vehiculo[s->capacidadVehiculos];
+    s->mecanicos = new Mecanico[s->capacidadMecanicos];
+    s->repuestos = new Repuesto[s->capacidadRepuestos];
+    s->ordenes = new OrdenServicio[s->capacidadOrdenes];
+
+    //5. IDs en 1
+    s->siguienteIdVehiculo = 1;
+    s->siguienteIdMecanico = 1;
+    s->siguienteIdRepuesto = 1;
+    s->siguienteIdOrden = 1;
 }
 
-
-//vehiculos
 Vehiculo* agregarVehiculo(SistemaTaller* s, Vehiculo datos);
 
 Vehiculo* buscarVehiculoPorID(SistemaTaller* s, int id);
