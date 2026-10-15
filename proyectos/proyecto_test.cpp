@@ -2,24 +2,6 @@
 #include <windows.h>
 using namespace std;
 
-//mouske herramienta misteriosa que me ayudara mas tarde
-void limpiar(){
-    #ifdef _WIN32
-        system("cls");
-    #else
-        system("clear");
-    #endif
-}
-
-void pausarylimpiar(){
-    cout << "\nPresiona Enter para continuar...";
-    cin.get();
-    #ifdef _WIN32
-        system("cls");//si estamos en windows -, limpia con 'cls'
-    #else
-        system("clear");//sino (linux/mac), limpia con 'clear'
-    #endif
-}
 
 //sturcts
 struct Taller{
@@ -78,7 +60,7 @@ struct OrdenServicio {
     int kilometrajeIngreso;
     float manoObra;
 
-
+    
     DetalleOrden* detalles;
     int           numDetalles;
     int           capacidadDetalles;
@@ -91,7 +73,7 @@ struct SistemaTaller{
     Mecanico*      mecanicos;    int numMecanicos; int capacidadMecanicos;
     Repuesto*      repuestos;    int numRepuestos; int capacidadRepuestos;
     OrdenServicio* ordenes;      int numOrdenes;   int capacidadOrdenes;
-
+    
     //Contadores para IDs autoincrementales
     int siguienteIdVehiculo;
     int siguienteIdMecanico;
@@ -103,7 +85,42 @@ struct SistemaTaller{
 //      CAPA LOGICA
 //=========================
 
+//mouske herramienta misteriosa que me ayudara mas tarde
+void limpiar(){
+    #ifdef _WIN32
+        system("cls");
+    #else
+        system("clear");
+    #endif
+}
 
+void pausarylimpiar(){
+    cout << "\nPresiona Enter para continuar...";
+    cin.get();
+    #ifdef _WIN32
+        system("cls");//si estamos en windows -, limpia con 'cls'
+    #else
+        system("clear");//sino (linux/mac), limpia con 'clear'
+    #endif
+}
+
+char aMinuscula(char c){
+    if(c >= 'A' && c <= 'Z')return c + 32;
+    return c;
+}
+
+bool compararSubcadenaIgnoreCase(const char* nombre, const char* sub){
+    for(int i = 0; nombre[i] != '\0'; i++){
+        int k = 0;
+        while(nombre[i + k] != '\0' && sub[k] != '\0' && aMinuscula(nombre[i + k]) == aMinuscula(sub[k])){
+            k++;
+        }
+        if (sub[k] == '\0') return true;
+    }
+    return false;
+}
+
+Vehiculo* buscarVehiculoPorPlaca(SistemaTaller* s, const char* placa);
 //==========================================
 //       CAPA DE LOGICA: VEHICULOS
 //==========================================
@@ -150,6 +167,16 @@ void inicializarSistema(SistemaTaller* s, const char* nombre, const char* rif, c
 }
 
 Vehiculo* agregarVehiculo(SistemaTaller* s, Vehiculo datos){
+    //Validamos anio (1950 - 2027) y kilometraje (>0)
+    if(datos.anio < 1950 || datos.anio > 2027 || datos.kilometraje <= 0){
+        return nullptr;
+    }
+
+    //Validar que la placa no este duplicada
+    if(buscarVehiculoPorPlaca(s, datos.placa) != nullptr){
+        return nullptr;
+    }
+    
     //1. Verificar si el arreglo esta lleno 
     if (s->numVehiculos >= s->capacidadVehiculos){
         //1.1 Duplicar la capacidad
@@ -355,6 +382,13 @@ bool actualizarVehiculo(SistemaTaller* s, int id, Vehiculo nuevosDatos){
 }
 
 bool eliminarVehiculo(SistemaTaller* s, int id){
+    //Verificar si el vehiculo tiene ordenes de servicio registrada
+    for(int i = 0; i < s->numOrdenes; i ++){
+        if(s->ordenes[i].idVehiculo == id){
+            return false;//rechazado:tiene ordenes asociadas
+        }
+    }
+    
     int indiceEncontrado = -1;
 
     //Buscamos el indice exacto del vehiculo en el arreglo
@@ -420,16 +454,22 @@ void uiRegistrarVehiculo(SistemaTaller* s){
 
     cout << "Placa: ";
     cin >> nuevo.placa;
+
     cout << "Marca: ";
     cin >> nuevo.marca;
+    
     cout << "Modelo: ";
-    cin >> nuevo.marca;
+    cin >> nuevo.modelo;
+    
     cout << "Año: ";
     cin >> nuevo.anio;
+    
     cout << "Kilometraje: ";
     cin >> nuevo.kilometraje;
+    
+    cin.ignore(10000, '\n');
+    
     cout << "Nombre del Propietario: ";
-    cin.ignore();
     cin.getline(nuevo.nombrePropietario, 100);
 
     agregarVehiculo(s, nuevo);
@@ -523,7 +563,7 @@ int main () {
                         } case 4: {
                             pausarylimpiar();
                             cout << "Probandou comandou carrou4" << endl;
-                            break; 
+                            break;  
                         } case 5: {
                             pausarylimpiar();
                             cout << "Probandou comandou carrou5" << endl;
