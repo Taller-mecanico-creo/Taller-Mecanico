@@ -167,8 +167,14 @@ void inicializarSistema(SistemaTaller* s, const char* nombre, const char* rif, c
 }
 
 Vehiculo* agregarVehiculo(SistemaTaller* s, Vehiculo datos){
-    //Validamos anio (1950 - 2027) y kilometraje (>0)
-    if(datos.anio < 1950 || datos.anio > 2027 || datos.kilometraje <= 0){
+    // Validamos que los textos obligatorios no esten vacios
+    if (datos.placa[0] == '\0' || datos.marca[0] == '\0' || datos.modelo[0] == '\0' ||
+        datos.nombrePropietario[0] == '\0' || datos.cedulaPropietario[0] == '\0') {
+        return nullptr;
+    }
+    
+    //Validamos anio (1950 - 2027) y kilometraje (>=0)
+    if(datos.anio < 1950 || datos.anio > 2027 || datos.kilometraje < 0){
         return nullptr;
     }
 
@@ -227,7 +233,7 @@ Vehiculo* buscarVehiculoPorPlaca(SistemaTaller* s, const char* placa){
     //Recorrer el arreglo de vehiculos
     for(int i = 0; i < s->numVehiculos; i++){
 
-        //comparamos la placa del vehiculo acual caracter por caracter
+        //comparamos la placa del vehiculo actual caracter por caracter
         const char* p1 = s->vehiculos[i].placa;
         const char* p2 = placa;
         bool iguales = true;
@@ -325,7 +331,7 @@ Vehiculo** listarVehiculos(SistemaTaller* s, int* cantidad){
     //3, Reservamos memoria dinamica para un arreglo de punteros del tamanio exacto
     Vehiculo** lista = new Vehiculo*[s->numVehiculos];
 
-    //4. Llenamos el arreglo con las direcciones de memoria de cada vegiculo existente
+    //4. Llenamos el arreglo con las direcciones de memoria de cada vehiculo existente
     for(int i = 0; i < s->numVehiculos; i++){
         lista[i] = &(s->vehiculos[i]);
     }
@@ -414,6 +420,171 @@ bool eliminarVehiculo(SistemaTaller* s, int id){
 
     return true; //Eliminacion exitante
 }
+//==========================================
+//       CAPA DE LOGICA: MECANICOS
+//==========================================
+
+//Funcion auxiliar para verificar que no existen duplicados
+Mecanico* buscarMecanicoPorCedula(SistemaTaller* s, const char* cedula) {
+    // Recorrer el arreglo de mecanicos
+    for (int i = 0; i < s->numMecanicos; i++) {
+        // Comparamos la cedula actual 
+        const char* p1 = s->mecanicos[i].cedula;
+        const char* p2 = cedula;
+        bool iguales = true;
+
+        int j = 0;
+        while (p1[j] != '\0' && p2[j] != '\0') {
+            if (p1[j] != p2[j]) {
+                iguales = false;
+                break;
+            }
+            j++;
+        }
+        // Validamos que ambas hayan terminado al mismo tiempo en '\0'
+        if (iguales && p1[j] == '\0' && p2[j] == '\0') {
+            // Retornamos la direccion de memoria del mecánico encontrado
+            return &(s->mecanicos[i]);
+        }
+    }
+    // Si recorrimos todo y ninguna cedula coincide
+    return nullptr;
+}
+
+Mecanico* buscarMecanicoPorID(SistemaTaller* s, int id) {
+    for (int i = 0; i < s->numMecanicos; i++) {
+        if (s->mecanicos[i].id == id) {
+            // Retornar la direccion de memoria del mecanico encontrado
+            return &(s->mecanicos[i]);
+        }
+    }
+    // Si recorrimos todo y no esta
+    return nullptr;
+}
+
+Mecanico* registrarMecanico(SistemaTaller* s, Mecanico datos) {
+    // Validamos que los campos no estén vacíos y la especialidad sea válida
+    if (datos.nombre[0] == '\0' || datos.cedula[0] == '\0') {
+        return nullptr;
+    }
+    // Validar que la especialidad sea una de las 5 permitidas caracter por caracter
+    const char* permitidas[5] = {"MOTOR", "FRENOS", "ELECTRICIDAD", "SUSPENSION", "GENERAL"};
+    bool especialidadValida = false;
+
+    for (int k = 0; k < 5; k++) {
+        const char* p1 = datos.especialidad;
+        const char* p2 = permitidas[k];
+        bool iguales = true;
+
+        int j = 0;
+        while (p1[j] != '\0' && p2[j] != '\0') {
+            if (p1[j] != p2[j]) {
+                iguales = false;
+                break;
+            }
+            j++;
+        }
+
+        if (iguales && p1[j] == '\0' && p2[j] == '\0') {
+            especialidadValida = true;
+            break;
+        }
+    }
+
+    if (!especialidadValida) {
+        return nullptr; // Especialidad no permitida
+    }
+
+    // Validar que la cédula no este duplicada
+    if (buscarMecanicoPorCedula(s, datos.cedula) != nullptr) {
+        return nullptr;
+    }
+
+    // 1. Verificar si el arreglo de mecanicos esta lleno
+    if (s->numMecanicos >= s->capacidadMecanicos) {
+        // 1.1 Duplicar la capacidad
+        int nuevaCapacidad = s->capacidadMecanicos * 2;
+
+        // 1.2 Crear un nuevo arreglo dinamico con la nueva capacidad
+        Mecanico* nuevosMecanicos = new Mecanico[nuevaCapacidad];
+
+        // 1.3 Copiar los datos del arreglo viejo al nuevo
+        for (int i = 0; i < s->numMecanicos; i++) {
+            nuevosMecanicos[i] = s->mecanicos[i];
+        }
+
+        // 1.4 Liberar la memoria del arreglo viejo
+        delete[] s->mecanicos;
+
+        // 1.5 Actualizar el puntero y la capacidad
+        s->mecanicos = nuevosMecanicos;
+        s->capacidadMecanicos = nuevaCapacidad;
+    }
+
+    // 2. Asignar un ID autoincremental al nuevo mecanico
+    datos.id = s->siguienteIdMecanico;
+    s->siguienteIdMecanico++;
+
+    // 3. Guardar el nuevo mecanico en el arreglo
+    s->mecanicos[s->numMecanicos] = datos;
+
+    // 4. Incrementar el contador de mecanicos
+    s->numMecanicos++;
+
+    // 5. Retornar un puntero al nuevo mecanico
+    return &(s->mecanicos[s->numMecanicos - 1]);
+
+}
+
+Mecanico** listarMecanicos(SistemaTaller* s, int* cantidad) {
+    // 1. Verificamos si no hay mecanicos registrados
+    if (s->numMecanicos == 0) {
+        *cantidad = 0;
+        return nullptr;
+    }
+
+    // 2. Definimos la cantidad encontrada como el total de mecanicos actuales
+    *cantidad = s->numMecanicos;
+
+    // 3. Reservamos memoria dinamica para un arreglo de punteros del tamanio exacto
+    Mecanico** lista = new Mecanico*[s->numMecanicos];
+
+    // 4. Llenamos el arreglo con las direcciones de memoria de cada mecanico existente
+    for (int i = 0; i < s->numMecanicos; i++) {
+        lista[i] = &(s->mecanicos[i]);
+    }
+
+    // Retornamos el arreglo de punteros (la capa visual lo liberara con delete[])
+    return lista;
+}
+
+int contarOrdenesAbiertasMecanico(SistemaTaller* s, int idMecanico) {
+    int contador = 0;
+    const char* estadoBuscado = "ABIERTA";
+
+    for (int i = 0; i < s->numOrdenes; i++) {
+        if (s->ordenes[i].idMecanico == idMecanico) {
+            // Comparamos caracter por caracter si el estado de la orden es "ABIERTA"
+            const char* p1 = s->ordenes[i].estado;
+            const char* p2 = estadoBuscado;
+            bool iguales = true;
+
+            int j = 0;
+            while (p1[j] != '\0' && p2[j] != '\0') {
+                if (p1[j] != p2[j]) {
+                    iguales = false;
+                    break;
+                }
+                j++;
+            }
+
+            if (iguales && p1[j] == '\0' && p2[j] == '\0') {
+                contador++;
+            }
+        }
+    }
+    return contador;
+}
 
 //=========================
 //      CAPA VISUAL
@@ -467,15 +638,66 @@ void uiRegistrarVehiculo(SistemaTaller* s){
     cout << "Kilometraje: ";
     cin >> nuevo.kilometraje;
     
+    // Limpiamos el salto de linea antes de usar getline
     cin.ignore(10000, '\n');
     
     cout << "Nombre del Propietario: ";
     cin.getline(nuevo.nombrePropietario, 100);
 
-    agregarVehiculo(s, nuevo);
-    cout << "\nVehiculo registrado exitosamente con ID asignado!" << endl;
-    pausarylimpiar();
+    cout << "Cedula del Propietario: ";
+    cin >> nuevo.cedulaPropietario;
 
+    cout << "Telefono del Propietario: ";
+    cin >> nuevo.telefonoPropietario;
+
+    cout << "Fecha de Registro (YYYY-MM-DD): ";
+    cin >> nuevo.fechaRegistro;
+
+    // Limpiamos el salto de linea final para que pausarylimpiar funcione bien
+    cin.ignore(10000, '\n');
+
+    Vehiculo* creado = agregarVehiculo(s, nuevo);
+    if (creado != nullptr) {
+    cout << "\nVehiculo registrado exitosamente con ID asignado!" << endl;
+    } else {
+        cout << "\nERROR: No se pudo registrar el vehiculo." << endl;
+    }
+    pausarylimpiar();
+}
+
+void uiBuscarVehiculo(SistemaTaller* s) {
+    limpiar();
+    cout << "=== BUSCAR VEHICULO ===" << endl;
+    int op = 0;
+    cout << "Seleccione el modo de busqueda: " << endl;
+    cout << "1. Buscar por ID" << endl;
+    cout << "2. Buscar por Placa" << endl;
+    cout << "3. Buscar por Propietario" << endl;
+    cin >> op;
+
+    switch (op) {
+    case 1: {
+    int idBuscado;
+
+    cout << "Ingrese un ID registrado: ";
+    cin >> idBuscado;
+
+    // Limpiamos el búfer despues de cin para evitar errores
+    cin.ignore(10000, '\n');
+    
+    Vehiculo* ubicado = buscarVehiculoPorID(s, idBuscado);
+    if (ubicado != nullptr) {
+    cout << "\nVehiculo ubicado con ID: " << ubicado->id << endl;
+    } else {
+        cout << "\nVehiculo no registrado (sin coincidencias)." << endl;
+    }
+    break; 
+    }
+    default:{
+        break;
+        }
+    } 
+    pausarylimpiar();
 }
 
 void menuMecánicos () {
@@ -484,10 +706,62 @@ void menuMecánicos () {
     cout << "╠═══════════════════════════════════════════╣" << endl;
     cout << "║ 1. Registrar mecánico                     ║" << endl;
     cout << "║ 2. Buscar por ID                          ║" << endl;
-    cout << "║ 3. Registrar entrada de mercancía         ║" << endl;
-    cout << "║ 4. Listar todos los mecánicos             ║" << endl;
+    cout << "║ 3. Listar todos los mecánicos             ║" << endl;
     cout << "║ 0. Volver al menú principal               ║" << endl;
     cout << "╚═══════════════════════════════════════════╝" << endl;
+}
+
+void uiRegistrarMecanico(SistemaTaller* s){
+    limpiar();
+    cout << "=== REGISTRAR NUEVO MECANICO ===" << endl;
+    Mecanico nuevo;
+
+    // Limpiamos el salto de linea antes de usar getline
+    cin.ignore(10000, '\n');
+
+    cout << "Nombre del Mecanico: ";
+    cin.getline(nuevo.nombre, 100);
+
+    cout << "Cedula: ";
+    cin >> nuevo.cedula;
+    
+    cout << "Especialidad (MOTOR, FRENOS, ELECTRICIDAD, SUSPENSION, GENERAL): ";
+    cin >> nuevo.especialidad;
+    
+    cout << "Fecha de Ingreso (YYYY-MM-DD): ";
+    cin >> nuevo.fechaIngreso;
+       
+    cin.ignore(10000, '\n');
+
+    Mecanico* creado = registrarMecanico(s, nuevo);
+
+    registrarMecanico(s, nuevo);
+    if (creado != nullptr) {
+    cout << "\nMecanico registrado exitosamente con ID asignado!" << endl;
+    } else {
+        cout << "\nERROR: No se pudo registrar el mecanico." << endl;
+    }
+    pausarylimpiar();
+}
+
+void uiBuscarMecanicoID(SistemaTaller* s) {
+    limpiar();
+    cout << "=== BUSCAR MECANICO POR ID ===" << endl;
+    int idBuscado;
+
+    cout << "Ingrese un ID registrado: ";
+    cin >> idBuscado;
+
+    // Limpiamos el búfer despues de cin para evitar errores
+    cin.ignore(10000, '\n');
+    
+    Mecanico* ubicado = buscarMecanicoPorID(s, idBuscado);
+    if (ubicado != nullptr) {
+    cout << "\nMecanico ubicado con nombre: " << ubicado->nombre << endl;
+    } else {
+        cout << "\nMecanico no registrado (sin coincidencias)." << endl;
+    }
+    pausarylimpiar();
 }
 
 void menuRepuestos () {
@@ -535,12 +809,6 @@ int main () {
         menuPrincipal();
         cin >> opcion;
 
-    /*if (!(cin >> opcion)) {
-        cout << "Entrada Inválida." << endl;
-        cin.clear();
-        cin.ignore(10000,'\n');
-    }*/
-
         switch (opcion) {
             case 1: {
                 do{
@@ -553,8 +821,7 @@ int main () {
                             uiRegistrarVehiculo(&miTaller);
                             break;
                         } case 2: {
-                            limpiar();
-                            cout << "Probandou comandou carrou2" << endl;
+                            uiBuscarVehiculo(&miTaller);
                             break;
                         } case 3: {
                             limpiar();
@@ -589,11 +856,51 @@ int main () {
                 limpiar();
                 break;
             }case 2: {
-            limpiar();
-            menuMecánicos();
-            cin >> opcion2;
-            limpiar();
-            break;
+            do{
+                    limpiar();
+                    menuMecánicos();
+                    cin >> opcion2;
+                
+                    switch (opcion2) {
+                        case 1: {
+                            uiRegistrarMecanico(&miTaller);
+                            break;
+                        } case 2: {
+                            uiBuscarMecanicoID(&miTaller);
+                            break;
+                        } case 3: {
+                            limpiar();
+                            cout << "Probandou comandou carrou3" << endl;
+                            break;
+                        } case 4: {
+                            pausarylimpiar();
+                            cout << "Probandou comandou carrou4" << endl;
+                            break;  
+                        } case 5: {
+                            pausarylimpiar();
+                            cout << "Probandou comandou carrou5" << endl;
+                            break;
+                        } case 6: {
+                            pausarylimpiar();
+                            cout << "Probandou comandou carrou6" << endl;
+                            break;
+                        } case 7: {
+                            pausarylimpiar();
+                            cout << "Probandou comandou carrou7" << endl;
+                            break;
+                        } case 0: {
+                            break;
+                        }
+                        default: {
+                            cout << "Opcion invalida." << endl;
+                            pausarylimpiar();
+                            break;
+                        }
+                    }
+                }while(opcion2 != 0);
+                limpiar();
+                break;
+            
 
             } case 3: {
             limpiar();
