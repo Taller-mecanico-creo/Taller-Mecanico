@@ -587,6 +587,375 @@ int contarOrdenesAbiertasMecanico(SistemaTaller* s, int idMecanico) {
     return contador;
 }
 
+//==========================================
+//       CAPA DE LOGICA: REPUESTOS
+//==========================================
+
+Repuesto* buscarRepuestoPorID(SistemaTaller* s, int id) {
+    for (int i = 0; i < s->numRepuestos; i++) {
+        if (s->repuestos[i].id == id) {
+            return &(s->repuestos[i]);
+        }
+    }
+    return nullptr;
+}
+
+//==========================================
+//       CAPA DE LOGICA: ORDENES
+//==========================================
+
+// Funcion auxiliar que verifica si un vehiculo ya tiene una orden abierta
+OrdenServicio* buscarOrdenAbiertaVehiculo(SistemaTaller* s, int idVehiculo) {
+    const char* estadoAbierta = "ABIERTA";
+
+    for (int i = 0; i < s->numOrdenes; i++) {
+        if (s->ordenes[i].idVehiculo == idVehiculo) {
+            // Comparamos caracter por caracter si el estado es "ABIERTA"
+            const char* p1 = s->ordenes[i].estado;
+            const char* p2 = estadoAbierta;
+            bool iguales = true;
+
+            int j = 0;
+            while (p1[j] != '\0' && p2[j] != '\0') {
+                if (p1[j] != p2[j]) {
+                    iguales = false;
+                    break;
+                }
+                j++;
+            }
+
+            if (iguales && p1[j] == '\0' && p2[j] == '\0') {
+                return &(s->ordenes[i]); // Retornamos la orden abierta encontrada
+            }
+        }
+    }
+    return nullptr; // No tiene ordenes abiertas
+}
+
+OrdenServicio* abrirOrden (SistemaTaller* s, int idVehiculo, int idMecanico, const char* fechaApertura, const char* descripcionFalla, int kilometrajeIngreso) {
+    // Validamos que la fecha y la descripcion de la falla no esten vacias
+    if (fechaApertura[0] == '\0' || descripcionFalla[0] == '\0') {
+        return nullptr;
+    }
+    // Verificamos la existencia de vehículos y mecánicos
+    Vehiculo* v = buscarVehiculoPorID(s, idVehiculo);
+    Mecanico* m = buscarMecanicoPorID(s, idMecanico);
+    if (v == nullptr || m == nullptr) {
+        return nullptr;
+    }
+
+    if (buscarOrdenAbiertaVehiculo(s, idVehiculo) != nullptr) {
+        return nullptr;
+    }
+    
+    if (contarOrdenesAbiertasMecanico(s, idMecanico) >= 3) {
+        return nullptr;
+    }
+
+    if (kilometrajeIngreso < v->kilometraje) {
+        return nullptr;
+    }
+
+    // Redimensionar el arreglo de ordenes del sistema si esta lleno
+    if (s->numOrdenes >= s->capacidadOrdenes) {
+        int nuevaCapacidad = s->capacidadOrdenes * 2;
+        OrdenServicio* nuevasOrdenes = new OrdenServicio[nuevaCapacidad];
+
+        for (int i = 0; i < s->numOrdenes; i++) {
+            nuevasOrdenes[i] = s->ordenes[i];
+        }
+
+        delete[] s->ordenes;
+        s->ordenes = nuevasOrdenes;
+        s->capacidadOrdenes = nuevaCapacidad;
+    }
+    // Actualizamos el kilometraje del vehiculo al kilometraje de ingreso
+    v->kilometraje = kilometrajeIngreso;
+
+    // Preparamos la nueva estructura OrdenServicio
+    OrdenServicio nueva;
+    nueva.id = s->siguienteIdOrden;
+    s->siguienteIdOrden++;
+
+    nueva.idVehiculo = idVehiculo;
+    nueva.idMecanico = idMecanico;
+    nueva.kilometrajeIngreso = kilometrajeIngreso;
+    nueva.manoObra = 0.0f; // inicialmente, mano de obra 0
+
+    // Copiamos fechaApertura caracter por caracter
+    int i = 0;
+    while (fechaApertura[i] != '\0' && i < 10) {
+        nueva.fechaApertura[i] = fechaApertura[i];
+        i++;
+    }
+    nueva.fechaApertura[i] = '\0';
+
+    // fechaCierre queda vacia mientras la orden este ABIERTA
+    nueva.fechaCierre[0] = '\0';
+
+    // Copiamos el estado inicial "ABIERTA"
+    const char* estInicial = "ABIERTA";
+    i = 0;
+    while (estInicial[i] != '\0' && i < 11) {
+        nueva.estado[i] = estInicial[i];
+        i++;
+    }
+    nueva.estado[i] = '\0';
+
+    // Copiamos la descripcion de la falla
+    i = 0;
+    while (descripcionFalla[i] != '\0' && i < 199) {
+        nueva.descripcionFalla[i] = descripcionFalla[i];
+        i++;
+    }
+    nueva.descripcionFalla[i] = '\0';
+
+    // Cada orden nueva reserva su arreglo de detalles con capacidad inicial 2
+    nueva.numDetalles = 0;
+    nueva.capacidadDetalles = 2;
+    nueva.detalles = new DetalleOrden[nueva.capacidadDetalles];
+
+    // Guardamos la orden en el arreglo del taller
+    s->ordenes[s->numOrdenes] = nueva;
+    s->numOrdenes++;
+
+    return &(s->ordenes[s->numOrdenes - 1]);
+}
+
+OrdenServicio* buscarOrdenPorID(SistemaTaller* s, int id) {
+    for (int i = 0; i < s->numOrdenes; i++) {
+        if (s->ordenes[i].id == id) {
+            return &(s->ordenes[i]);
+        }
+    }
+    return nullptr;
+}
+
+bool agregarRepuestoAOrden(SistemaTaller* s, int idOrden, int idRepuesto, int cantidad) {
+    // La cantidad debe ser mayor a 0
+    if (cantidad <= 0) {
+        return false;
+    }
+
+    OrdenServicio* orden = buscarOrdenPorID(s, idOrden);
+    if (orden == nullptr) {
+        return false;
+    }
+
+    // Verificamos caracter por caracter que la orden este abierta
+    const char* p1 = orden->estado;
+    const char* p2 = "ABIERTA";
+    bool estaAbierta = true;
+    int j = 0;
+    while (p1[j] != '\0' && p2[j] != '\0') {
+        if (p1[j] != p2[j]) {
+            estaAbierta = false;
+            break;
+        }
+        j++;
+    }
+    if (!estaAbierta || p1[j] != '\0' || p2[j] != '\0') {
+        return false; // No se puede modificar si no esta abierta
+    }
+
+    // Verificamos que el repuesto exista y tenga stock suficiente
+    Repuesto* rep = buscarRepuestoPorID(s, idRepuesto);
+    if (rep == nullptr || rep->stock < cantidad) {
+        return false;
+    }
+
+    // Descontamos las unidades del stock inmediatamente 
+    rep->stock -= cantidad;
+
+    // Buscamos si el repuesto ya existe en alguna linea de detalle de esta orden
+    for (int i = 0; i < orden->numDetalles; i++) {
+        if (orden->detalles[i].idRepuesto == idRepuesto) {
+            // Si ya esta en la orden, se acumula en la linea existente
+            orden->detalles[i].cantidad += cantidad;
+            return true;
+        }
+    }
+
+    // Si es un repuesto nuevo en la orden, verificamos si hay que redimensionar detalles
+    if (orden->numDetalles >= orden->capacidadDetalles) {
+        int nuevaCapacidad = orden->capacidadDetalles * 2;
+        DetalleOrden* nuevosDetalles = new DetalleOrden[nuevaCapacidad];
+
+        for (int i = 0; i < orden->numDetalles; i++) {
+            nuevosDetalles[i] = orden->detalles[i];
+        }
+
+        delete[] orden->detalles;
+        orden->detalles = nuevosDetalles;
+        orden->capacidadDetalles = nuevaCapacidad;
+    }
+
+    // Creamos la nueva linea guardando el precio vigente en este momento (Precio Historico)
+    orden->detalles[orden->numDetalles].idRepuesto = idRepuesto;
+    orden->detalles[orden->numDetalles].cantidad = cantidad;
+    orden->detalles[orden->numDetalles].precioUnitario = rep->precio;
+    orden->numDetalles++;
+
+    return true;
+}
+
+bool quitarRepuestoDeOrden(SistemaTaller* s, int idOrden, int idRepuesto) {
+    OrdenServicio* orden = buscarOrdenPorID(s, idOrden);
+    if (orden == nullptr) {
+        return false;
+    }
+
+    // Validar que la orden este abierta
+    const char* p1 = orden->estado;
+    const char* p2 = "ABIERTA";
+    bool estaAbierta = true;
+    int j = 0;
+    while (p1[j] != '\0' && p2[j] != '\0') {
+        if (p1[j] != p2[j]) {
+            estaAbierta = false;
+            break;
+        }
+        j++;
+    }
+    if (!estaAbierta || p1[j] != '\0' || p2[j] != '\0') {
+        return false;
+    }
+
+    // Buscar el repuesto dentro del arreglo de detalles de la orden
+    int indiceEncontrado = -1;
+    for (int i = 0; i < orden->numDetalles; i++) {
+        if (orden->detalles[i].idRepuesto == idRepuesto) {
+            indiceEncontrado = i;
+            break;
+        }
+    }
+
+    if (indiceEncontrado == -1) {
+        return false; // El repuesto no estaba en la orden
+    }
+
+    // Devolver las unidades al inventario de repuestos
+    Repuesto* rep = buscarRepuestoPorID(s, idRepuesto);
+    if (rep != nullptr) {
+        rep->stock += orden->detalles[indiceEncontrado].cantidad;
+    }
+
+    // Desplazar los detalles siguientes hacia la izquierda para eliminar la linea
+    for (int i = indiceEncontrado; i < orden->numDetalles - 1; i++) {
+        orden->detalles[i] = orden->detalles[i + 1];
+    }
+
+    orden->numDetalles--;
+    return true;
+}
+
+bool cerrarOrden(SistemaTaller* s, int idOrden, float manoObra, const char* fechaCierre) {
+    // Validar mano de obra >= 0 y fecha no vacia
+    if (manoObra < 0.0f || fechaCierre[0] == '\0') {
+        return false;
+    }
+
+    OrdenServicio* orden = buscarOrdenPorID(s, idOrden);
+    if (orden == nullptr) {
+        return false;
+    }
+
+    // Validar que este abierta
+    const char* p1 = orden->estado;
+    const char* p2 = "ABIERTA";
+    bool estaAbierta = true;
+    int j = 0;
+    while (p1[j] != '\0' && p2[j] != '\0') {
+        if (p1[j] != p2[j]) {
+            estaAbierta = false;
+            break;
+        }
+        j++;
+    }
+    if (!estaAbierta || p1[j] != '\0' || p2[j] != '\0') {
+        return false;
+    }
+
+    // Debe quedar con al menos una linea de detalle o mano de obra > 0
+    if (orden->numDetalles == 0 && manoObra <= 0.0f) {
+        return false;
+    }
+
+    // Actualizamos mano de obra, fecha de cierre y cambiamos estado a cerrada
+    orden->manoObra = manoObra;
+
+    int i = 0;
+    while (fechaCierre[i] != '\0' && i < 10) {
+        orden->fechaCierre[i] = fechaCierre[i];
+        i++;
+    }
+    orden->fechaCierre[i] = '\0';
+
+    const char* estCerrada = "CERRADA";
+    i = 0;
+    while (estCerrada[i] != '\0' && i < 11) {
+        orden->estado[i] = estCerrada[i];
+        i++;
+    }
+    orden->estado[i] = '\0';
+
+    return true;
+}
+
+bool anularOrden (SistemaTaller* s, int idOrden) {
+    OrdenServicio* orden = buscarOrdenPorID(s, idOrden);
+    if (orden == nullptr) {
+        return false;
+    }
+
+    // Verificamos si ya esta anulada
+    const char* p1 = orden->estado;
+    const char* p2 = "ANULADA";
+    bool yaAnulada = true;
+    int j = 0;
+    while (p1[j] != '\0' && p2[j] != '\0') {
+        if (p1[j] != p2[j]) {
+            yaAnulada = false;
+            break;
+        }
+        j++;
+    }
+    if (yaAnulada && p1[j] == '\0' && p2 [j] == '\0') {
+        return false; // Ya estaba anulada
+    }
+
+    // Devolvemos al inventario todas las unidades de cada linea de detalle
+    for (int i = 0; i < orden->numDetalles; i++) {
+        Repuesto* rep = buscarRepuestoPorID(s, orden->detalles[i].idRepuesto);
+        if (rep != nullptr) {
+            rep->stock += orden->detalles[i].cantidad;
+        }
+    }
+    // Cambiamos el estado a "ANULADA"
+    const char* estAnulada = "ANULADA";
+    int i = 0;
+    while (estAnulada[i] != '\0' && i < 11) {
+        orden->estado[i] = estAnulada[i];
+        i++;
+    }
+    orden->estado[i] = '\0';
+
+    return true;
+}
+
+float calcularTotalOrden(OrdenServicio* orden) {
+    if (orden == nullptr) {
+        return 0.0f;
+    }
+
+    float sumaRepuestos = 0.0f;
+    for (int i = 0; i < orden->numDetalles; i++) {
+        sumaRepuestos += (orden->detalles[i].cantidad * orden->detalles[i].precioUnitario);
+    }
+
+    return orden->manoObra + sumaRepuestos;
+}
+
 //=========================
 //      CAPA VISUAL
 //=========================
@@ -951,7 +1320,7 @@ void uiListarMecanicos(SistemaTaller* s){
         cout << "----------------------------------------" << endl;
         delete[] lista;
     } else{
-        cout << "\nNo hya mecanicos registrados." << endl;
+        cout << "\nNo hay mecanicos registrados." << endl;
     }
     pausarylimpiar();
 }
@@ -980,7 +1349,8 @@ void menuÓrdenes () {
     cout << "║ 4. Cerrar orden                           ║" << endl;
     cout << "║ 5. Anular orden                           ║" << endl;
     cout << "║ 6. Ver detalle de orden                   ║" << endl;
-    cout << "║ 7. Listar órdenes                         ║" << endl;
+    cout << "║ 7. Buscar por ID                          ║" << endl;
+    cout << "║ 8. Listar por estado/vehículo             ║" << endl;
     cout << "║ 0. Volver al menú principal               ║" << endl;
     cout << "╚═══════════════════════════════════════════╝" << endl;
 }
