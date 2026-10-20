@@ -25,7 +25,7 @@ struct Vehiculo{
 };
 
 struct Mecanico{
-    int id;
+    int  id;
     char nombre[100];
     char cedula[20];
     char especialidad[20];
@@ -33,32 +33,32 @@ struct Mecanico{
 };
 
 struct Repuesto {
-    int id;
-    char codigo[20];
-    char nombre[100];
-    char marca[50];
-    float precio;
-    int stock;
-    int stockMinimo;
-    char fechaRegistro [11]; //yyyy-mm-dd
+    int     id;
+    char    codigo[20];
+    char    nombre[100];
+    char    marca[50];
+    float   precio;
+    int     stock;
+    int     stockMinimo;
+    char    fechaRegistro [11]; //yyyy-mm-dd
 };
 
 struct DetalleOrden {
-    int idRepuesto;
-    int cantidad;
-    float precioUnitario;
+    int     idRepuesto;
+    int     cantidad;
+    float   precioUnitario;
 };
 
 struct OrdenServicio {
-    int id;
-    int idVehiculo;
-    int idMecanico;
-    char fechaApertura[11]; //yyyy-mm-dd
-    char fechaCierre[11]; //vacia mientras la orden esté abierta
-    char estado[12]; // Abierta, Cerrada, anulada
-    char descripcionFalla[200];
-    int kilometrajeIngreso;
-    float manoObra;
+    int     id;
+    int     idVehiculo;
+    int     idMecanico;
+    char    fechaApertura[11]; //yyyy-mm-dd
+    char    fechaCierre[11]; //vacia mientras la orden esté abierta
+    char    estado[12]; // Abierta, Cerrada, anulada
+    char    descripcionFalla[200];
+    int     kilometrajeIngreso;
+    float   manoObra;
 
     
     DetalleOrden* detalles;
@@ -109,6 +109,15 @@ char aMinuscula(char c){
     return c;
 }
 
+bool compararCadenasExactas(const char* s1, const char* s2){
+    int i = 0;
+    while (s1[i] != '\0' && s2[i] != '\0'){
+        if (s1[i] != s2[i]) return false;
+        i++;
+    }
+    return s1[i] == '\0' && s2[i] == '\0';
+}
+
 bool compararSubcadenaIgnoreCase(const char* nombre, const char* sub){
     for(int i = 0; nombre[i] != '\0'; i++){
         int k = 0;
@@ -120,9 +129,16 @@ bool compararSubcadenaIgnoreCase(const char* nombre, const char* sub){
     return false;
 }
 
+//por si acaso
 Vehiculo* buscarVehiculoPorPlaca(SistemaTaller* s, const char* placa);
+Vehiculo* buscarVehiculoPorID(SistemaTaller* s, int id);
+Mecanico* buscarMecanicoPorID(SistemaTaller* s, int id);
+Repuesto* buscarRepuestoPorID(SistemaTaller* s, int id);
+Repuesto* buscarRepuestoPorCodigo(SistemaTaller* s, const char* codigo);
+OrdenServicio* buscarOrdenPorID(SistemaTaller* s, int id);
+
 //==========================================
-//       CAPA DE LOGICA: VEHICULOS
+//       CAPA DE LOGICA: INICIALIZACION
 //==========================================
 
 //Inializar el sistema (reserva capacidad 4 para entidades y 2 para detalles)
@@ -166,6 +182,10 @@ void inicializarSistema(SistemaTaller* s, const char* nombre, const char* rif, c
     s->siguienteIdOrden = 1;
 }
 
+//==========================================
+//       CAPA DE LOGICA: VEHICULOS
+//==========================================
+
 Vehiculo* agregarVehiculo(SistemaTaller* s, Vehiculo datos){
     // Validamos que los textos obligatorios no esten vacios
     if (datos.placa[0] == '\0' || datos.marca[0] == '\0' || datos.modelo[0] == '\0' ||
@@ -174,14 +194,10 @@ Vehiculo* agregarVehiculo(SistemaTaller* s, Vehiculo datos){
     }
     
     //Validamos anio (1950 - 2027) y kilometraje (>=0)
-    if(datos.anio < 1950 || datos.anio > 2027 || datos.kilometraje < 0){
-        return nullptr;
-    }
-
+    if(datos.anio < 1950 || datos.anio > 2027 || datos.kilometraje < 0) return nullptr;
+    
     //Validar que la placa no este duplicada
-    if(buscarVehiculoPorPlaca(s, datos.placa) != nullptr){
-        return nullptr;
-    }
+    if(buscarVehiculoPorPlaca(s, datos.placa) != nullptr) return nullptr;
     
     //1. Verificar si el arreglo esta lleno 
     if (s->numVehiculos >= s->capacidadVehiculos){
@@ -220,69 +236,23 @@ Vehiculo* agregarVehiculo(SistemaTaller* s, Vehiculo datos){
 
 Vehiculo* buscarVehiculoPorID(SistemaTaller* s, int id){
     for(int i = 0; i < s->numVehiculos; i++){
-        if (s->vehiculos[i].id == id){
-            //retornar la direccion de memoria del vehiculo encontrado
-            return &(s->vehiculos[i]);
-        }
+        if (s->vehiculos[i].id == id) return &(s->vehiculos[i]);
     }
-    //Si recorrimos todo y no esta
     return nullptr;
 }
 
 Vehiculo* buscarVehiculoPorPlaca(SistemaTaller* s, const char* placa){
-    //Recorrer el arreglo de vehiculos
     for(int i = 0; i < s->numVehiculos; i++){
-
-        //comparamos la placa del vehiculo actual caracter por caracter
-        const char* p1 = s->vehiculos[i].placa;
-        const char* p2 = placa;
-        bool iguales = true;
-
-        int j = 0;
-        while (p1[j] != '\0' && p2[j] != '\0'){
-            if (p1[j] != p2[j]){
-                iguales = false;
-                break;
-            }
-            j++;
-        }
-        
-        //Validamos que ambas hayan terminado al mismo tiempo
-        if (iguales && p1[j] == '\0' && p2[j] == '\0'){
-            //encontramos el vehiculo, retornamos su direccion de memoria
-            return &(s->vehiculos[i]);
-        }
+        if (compararCadenasExactas(s->vehiculos[i].placa, placa)) return &(s->vehiculos[i]);
     }
-    //Si recorrimos todo el taller y ninguna placa coincide
     return nullptr;
 }
 
 Vehiculo** buscarVehiculosPorPropietario(SistemaTaller* s, const char* subcadena, int* cantidad){
-    //1. Primero contamos cuantos vehiculos coinciden con la subcadena del nombre del propietario
     int encontrados = 0;
     for(int i = 0; i < s->numVehiculos; i++){
-        //funcion aux interna o logica para buscar subcadena
-        //Verificamos si la subcadena esta dentro de nombrePropietario
-        const char* nombre = s->vehiculos[i].nombrePropietario;
-        const char* sub = subcadena;
-
-        bool coincide = false;
-        for(int j = 0; nombre[j] != '\0'; j++){
-            int k = 0;
-            while (nombre[j + k] != '\0' && sub[k] != '\0' && nombre[j + k] == sub[k]){
-                k++;
-            }
-            if (sub[k] == '\0'){ //encontramos la coincidencia
-                coincide = true;
-                break;
-            }
-        }
-        if (coincide){
-            encontrados++;
-        }
+        if (compararSubcadenaIgnoreCase(s->vehiculos[i].nombrePropietario, subcadena)) encontrados++;   
     }
-
-    //Si no se encontro ninguno, devolvemos cantidad en 0 y nullptr
     *cantidad = 0;
     if (encontrados == 0){
         return nullptr;
@@ -294,23 +264,8 @@ Vehiculo** buscarVehiculosPorPropietario(SistemaTaller* s, const char* subcadena
     //3.Volvemos a recorrer para llenar el arreglo con las direcciones de memoria
     int index = 0;
     for(int i = 0; i < s->numVehiculos; i++){
-        const char* nombre = s->vehiculos[i].nombrePropietario;
-        const char* sub = subcadena;
-
-        bool coincide = false;
-        for(int j = 0; nombre[j] != '\0'; j++){
-            int k = 0;
-            while (nombre[j + k] != '\0' && sub[k] != '\0' && nombre[j + k] == sub[k]){
-                k++;
-            }
-            if (sub[k] == '\0'){ //encontramos la coincidencia
-                coincide = true;
-                break;
-            }
-        }
-        if (coincide){
-            resultados[index] = &(s->vehiculos[i]);
-            index++;
+        if (compararSubcadenaIgnoreCase(s->vehiculos[i].nombrePropietario, subcadena)){
+            resultados[index++] = &(s->vehiculos[i]);
         }
     }
     //Actualizamos el parametro de salida con la cantidad total hallada
@@ -345,9 +300,7 @@ bool actualizarVehiculo(SistemaTaller* s, int id, Vehiculo nuevosDatos){
     Vehiculo* v = buscarVehiculoPorID(s, id);
 
     //Si no existe, retornamos falso
-    if (v == nullptr){
-        return false;
-    }
+    if (v == nullptr) return false;
 
     //Actualizamos los campos numericos directamente
     v->anio = nuevosDatos.anio;
@@ -390,28 +343,24 @@ bool actualizarVehiculo(SistemaTaller* s, int id, Vehiculo nuevosDatos){
 bool eliminarVehiculo(SistemaTaller* s, int id){
     //Verificar si el vehiculo tiene ordenes de servicio registrada
     for(int i = 0; i < s->numOrdenes; i ++){
-        if(s->ordenes[i].idVehiculo == id){
-            return false;//rechazado:tiene ordenes asociadas
-        }
+        if(s->ordenes[i].idVehiculo == id) return false;//rechazado:tiene ordenes asociadas
     }
     
-    int indiceEncontrado = -1;
+    int idx = -1;
 
     //Buscamos el indice exacto del vehiculo en el arreglo
     for(int i = 0; i < s->numVehiculos; i++){
         if (s->vehiculos[i].id == id){
-            indiceEncontrado = i;
+            idx = i;
             break;
         }
     }
 
     //Si no se encuentra, retornamos falso
-    if(indiceEncontrado == -1){
-        return false;
-    }
+    if(idx == -1) return false;
 
     //desplazamos los elemntos hacia la izquierda para "rellenar" el espacio
-    for(int i = indiceEncontrado; i < s->numVehiculos - 1; i++){
+    for(int i = idx; i < s->numVehiculos - 1; i++){
         s->vehiculos[i] = s->vehiculos[i + 1];
     }
 
@@ -427,39 +376,16 @@ bool eliminarVehiculo(SistemaTaller* s, int id){
 
 //Funcion auxiliar para verificar que no existen duplicados
 Mecanico* buscarMecanicoPorCedula(SistemaTaller* s, const char* cedula) {
-    // Recorrer el arreglo de mecanicos
     for (int i = 0; i < s->numMecanicos; i++) {
-        // Comparamos la cedula actual 
-        const char* p1 = s->mecanicos[i].cedula;
-        const char* p2 = cedula;
-        bool iguales = true;
-
-        int j = 0;
-        while (p1[j] != '\0' && p2[j] != '\0') {
-            if (p1[j] != p2[j]) {
-                iguales = false;
-                break;
-            }
-            j++;
-        }
-        // Validamos que ambas hayan terminado al mismo tiempo en '\0'
-        if (iguales && p1[j] == '\0' && p2[j] == '\0') {
-            // Retornamos la direccion de memoria del mecánico encontrado
-            return &(s->mecanicos[i]);
-        }
+        if (compararCadenasExactas(s->mecanicos[i].cedula, cedula)) return &(s->mecanicos[i]);   
     }
-    // Si recorrimos todo y ninguna cedula coincide
     return nullptr;
 }
 
 Mecanico* buscarMecanicoPorID(SistemaTaller* s, int id) {
     for (int i = 0; i < s->numMecanicos; i++) {
-        if (s->mecanicos[i].id == id) {
-            // Retornar la direccion de memoria del mecanico encontrado
-            return &(s->mecanicos[i]);
-        }
+        if (s->mecanicos[i].id == id) return &(s->mecanicos[i]);
     }
-    // Si recorrimos todo y no esta
     return nullptr;
 }
 
@@ -471,55 +397,35 @@ Mecanico* registrarMecanico(SistemaTaller* s, Mecanico datos) {
     // Validar que la especialidad sea una de las 5 permitidas caracter por caracter
     const char* permitidas[5] = {"MOTOR", "FRENOS", "ELECTRICIDAD", "SUSPENSION", "GENERAL"};
     bool especialidadValida = false;
-
-    for (int k = 0; k < 5; k++) {
-        const char* p1 = datos.especialidad;
-        const char* p2 = permitidas[k];
-        bool iguales = true;
-
-        int j = 0;
-        while (p1[j] != '\0' && p2[j] != '\0') {
-            if (p1[j] != p2[j]) {
-                iguales = false;
+    for (int k = 0; k < 5; k++){
+            if (compararCadenasExactas(datos.especialidad, permitidas[k])){
+                especialidadValida = true;
                 break;
-            }
-            j++;
-        }
-
-        if (iguales && p1[j] == '\0' && p2[j] == '\0') {
-            especialidadValida = true;
-            break;
         }
     }
 
-    if (!especialidadValida) {
-        return nullptr; // Especialidad no permitida
-    }
+    if (!especialidadValida) return nullptr;
 
     // Validar que la cédula no este duplicada
-    if (buscarMecanicoPorCedula(s, datos.cedula) != nullptr) {
-        return nullptr;
-    }
+    if (buscarMecanicoPorCedula(s, datos.cedula) != nullptr) return nullptr;
 
     // 1. Verificar si el arreglo de mecanicos esta lleno
     if (s->numMecanicos >= s->capacidadMecanicos) {
         // 1.1 Duplicar la capacidad
-        int nuevaCapacidad = s->capacidadMecanicos * 2;
+        int nuevaCap = s->capacidadMecanicos * 2;
 
         // 1.2 Crear un nuevo arreglo dinamico con la nueva capacidad
-        Mecanico* nuevosMecanicos = new Mecanico[nuevaCapacidad];
+        Mecanico* nuevosM = new Mecanico[nuevaCap];
 
         // 1.3 Copiar los datos del arreglo viejo al nuevo
-        for (int i = 0; i < s->numMecanicos; i++) {
-            nuevosMecanicos[i] = s->mecanicos[i];
-        }
+        for (int i = 0; i < s->numMecanicos; i++) nuevosM[i] = s->mecanicos[i];
 
         // 1.4 Liberar la memoria del arreglo viejo
         delete[] s->mecanicos;
 
         // 1.5 Actualizar el puntero y la capacidad
-        s->mecanicos = nuevosMecanicos;
-        s->capacidadMecanicos = nuevaCapacidad;
+        s->mecanicos = nuevosM;
+        s->capacidadMecanicos = nuevaCap;
     }
 
     // 2. Asignar un ID autoincremental al nuevo mecanico
@@ -564,25 +470,9 @@ int contarOrdenesAbiertasMecanico(SistemaTaller* s, int idMecanico) {
     const char* estadoBuscado = "ABIERTA";
 
     for (int i = 0; i < s->numOrdenes; i++) {
-        if (s->ordenes[i].idMecanico == idMecanico) {
-            // Comparamos caracter por caracter si el estado de la orden es "ABIERTA"
-            const char* p1 = s->ordenes[i].estado;
-            const char* p2 = estadoBuscado;
-            bool iguales = true;
-
-            int j = 0;
-            while (p1[j] != '\0' && p2[j] != '\0') {
-                if (p1[j] != p2[j]) {
-                    iguales = false;
-                    break;
-                }
-                j++;
-            }
-
-            if (iguales && p1[j] == '\0' && p2[j] == '\0') {
-                contador++;
-            }
-        }
+       if (s->ordenes[i].idMecanico == idMecanico && compararCadenasExactas(s->ordenes[i].estado, "ABIERTA")) {
+            contador++;
+       }
     }
     return contador;
 }
@@ -591,13 +481,111 @@ int contarOrdenesAbiertasMecanico(SistemaTaller* s, int idMecanico) {
 //       CAPA DE LOGICA: REPUESTOS
 //==========================================
 
-Repuesto* buscarRepuestoPorID(SistemaTaller* s, int id) {
-    for (int i = 0; i < s->numRepuestos; i++) {
-        if (s->repuestos[i].id == id) {
-            return &(s->repuestos[i]);
-        }
+Repuesto* buscarRepuestoPorCodigo(SistemaTaller* s, const char* codigo){
+    for (int i = 0; i < s->numRepuestos; i++){
+        if (compararCadenasExactas(s->repuestos[i].codigo, codigo)) return &(s->repuestos[i]);
     }
     return nullptr;
+}
+
+Repuesto* buscarRepuestoPorID(SistemaTaller* s, int id) {
+    for (int i = 0; i < s->numRepuestos; i++) {
+        if (s->repuestos[i].id == id) return &(s->repuestos[i]);
+    }
+    return nullptr;
+}
+
+Repuesto** buscarRepuestosPorNombreParcial(SistemaTaller* s, const char* subcadena, int* cantidad){
+    int encontrados = 0;
+    for (int i = 0; i < s->numRepuestos; i++){
+        if (compararSubcadenaIgnoreCase(s->repuestos[i].nombre, subcadena)) encontrados++;
+    }
+    *cantidad = 0;
+    if (encontrados == 0) return nullptr;
+
+    Repuesto** resultados = new Repuesto*[encontrados];
+    int index = 0;
+    for (int i = 0; i <s->numRepuestos; i ++) {
+        if (compararSubcadenaIgnoreCase(s->repuestos[i].nombre, subcadena)){
+            resultados[index++] = &(s->repuestos[i]);
+        }
+    }
+    *cantidad = encontrados;
+    return resultados;
+}
+
+Repuesto* registrarRepuesto(SistemaTaller* s, Repuesto datos){
+    //Validaciones de negocio (Precio > 0, Stock >= 0, Stockminimo >=0, codigo unico???)
+    if (datos.codigo[0] == '\0' || datos.nombre[0] == '\0' ||
+        datos.precio <= 0.0f || datos.stock < 0 || datos.stockMinimo < 0) {
+        return nullptr;
+    }
+    if  (buscarRepuestoPorCodigo(s, datos.codigo) != nullptr) return nullptr;
+
+    //Redimensionamiento automatico (capacidad inicial 4)
+    if (s->numRepuestos >= s->capacidadRepuestos){
+        int nuevaCap = s->capacidadRepuestos * 2;
+        Repuesto* nuevosR = new Repuesto[nuevaCap];
+        for (int i = 0; i< s->numRepuestos; i++)nuevosR[i] = s->repuestos[i];
+        delete[] s->repuestos;
+        s->repuestos = nuevosR;
+        s->capacidadRepuestos = nuevaCap;
+    }
+
+    datos.id = s->siguienteIdRepuesto++;
+    s->repuestos[s->numRepuestos] = datos;
+    s->numRepuestos++;
+    return &(s->repuestos[s->numRepuestos - 1]);
+}
+
+bool registrarEntradaMercancia(SistemaTaller* s, int idRepuesto, int cantidad){
+    if (cantidad <= 0) return false;
+    Repuesto* rep = buscarRepuestoPorID(s, idRepuesto);
+    if (rep == nullptr) return false;
+
+    rep->stock =+ cantidad;
+    return true;
+}
+
+Repuesto** listarRepuestos(SistemaTaller* s, int* cantidad){
+    if (s->numRepuestos == 0){
+        *cantidad = 0;
+        return nullptr;
+    }
+    *cantidad = s->numRepuestos;
+    Repuesto** lista = new Repuesto*[s->numRepuestos];
+    for (int i = 0; i< s->numRepuestos; i++) lista[i] = &(s->repuestos[i]);
+    return lista;
+}
+
+bool cambiarPrecioRepuesto(SistemaTaller* s, int idRepuesto, float nuevoPrecio){
+    if (nuevoPrecio <= 0.0f) return false;
+    Repuesto* rep = buscarRepuestoPorID(s, idRepuesto);
+    if (rep == nullptr) return false;
+
+    rep->precio = nuevoPrecio; //no afecta ordenes historicas ya cerradas
+    return true;
+}
+
+bool eliminarRepuesto(SistemaTaller* s, int idRepuesto){
+    //REchazado si aparece en detalles de alguna orden
+    for (int i = 0; i < s->numOrdenes; i++){
+        for (int j = 0; j < s->ordenes[i].numDetalles; j++){
+            if (s->ordenes[i].detalles[j].idRepuesto == idRepuesto) return false;
+        }
+    }
+
+    int idx = -1;
+    for (int i = 0; i < s->numRepuestos; i++){
+        if (s->repuestos[i].id == idRepuesto){ idx = 1; break; }
+    }
+    if (idx == -1) return false;
+
+    for (int i = idx; i < s->numRepuestos - 1; i++){
+        s->repuestos[i] = s->repuestos[i + 1];
+    }
+    s->numRepuestos--;
+    return true;
 }
 
 //==========================================
@@ -605,28 +593,10 @@ Repuesto* buscarRepuestoPorID(SistemaTaller* s, int id) {
 //==========================================
 
 // Funcion auxiliar que verifica si un vehiculo ya tiene una orden abierta
-OrdenServicio* buscarOrdenAbiertaVehiculo(SistemaTaller* s, int idVehiculo) {
-    const char* estadoAbierta = "ABIERTA";
-
+OrdenServicio* buscarOrdenAbiertaVehiculo(SistemaTaller* s, int idVehiculo){
     for (int i = 0; i < s->numOrdenes; i++) {
-        if (s->ordenes[i].idVehiculo == idVehiculo) {
-            // Comparamos caracter por caracter si el estado es "ABIERTA"
-            const char* p1 = s->ordenes[i].estado;
-            const char* p2 = estadoAbierta;
-            bool iguales = true;
-
-            int j = 0;
-            while (p1[j] != '\0' && p2[j] != '\0') {
-                if (p1[j] != p2[j]) {
-                    iguales = false;
-                    break;
-                }
-                j++;
-            }
-
-            if (iguales && p1[j] == '\0' && p2[j] == '\0') {
-                return &(s->ordenes[i]); // Retornamos la orden abierta encontrada
-            }
+        if (s->ordenes[i].idVehiculo == idVehiculo && compararCadenasExactas(s->ordenes[i].estado, "ABIERTA")){
+                return &(s->ordenes[i]);
         }
     }
     return nullptr; // No tiene ordenes abiertas
@@ -640,34 +610,20 @@ OrdenServicio* abrirOrden (SistemaTaller* s, int idVehiculo, int idMecanico, con
     // Verificamos la existencia de vehículos y mecánicos
     Vehiculo* v = buscarVehiculoPorID(s, idVehiculo);
     Mecanico* m = buscarMecanicoPorID(s, idMecanico);
-    if (v == nullptr || m == nullptr) {
-        return nullptr;
-    }
+    if (v == nullptr || m == nullptr) return nullptr;
 
-    if (buscarOrdenAbiertaVehiculo(s, idVehiculo) != nullptr) {
-        return nullptr;
-    }
-    
-    if (contarOrdenesAbiertasMecanico(s, idMecanico) >= 3) {
-        return nullptr;
-    }
-
-    if (kilometrajeIngreso < v->kilometraje) {
-        return nullptr;
-    }
+    if (buscarOrdenAbiertaVehiculo(s, idVehiculo) != nullptr) return nullptr;
+    if (contarOrdenesAbiertasMecanico(s, idMecanico) >= 3) return nullptr;
+    if (kilometrajeIngreso < v->kilometraje) return nullptr;
 
     // Redimensionar el arreglo de ordenes del sistema si esta lleno
     if (s->numOrdenes >= s->capacidadOrdenes) {
-        int nuevaCapacidad = s->capacidadOrdenes * 2;
-        OrdenServicio* nuevasOrdenes = new OrdenServicio[nuevaCapacidad];
-
-        for (int i = 0; i < s->numOrdenes; i++) {
-            nuevasOrdenes[i] = s->ordenes[i];
-        }
-
+        int nuevaCap = s->capacidadOrdenes * 2;
+        OrdenServicio* nuevasO = new OrdenServicio[nuevaCap];
+        for (int i = 0; i < s->numOrdenes; i++) nuevasO[i] = s->ordenes[i];
         delete[] s->ordenes;
-        s->ordenes = nuevasOrdenes;
-        s->capacidadOrdenes = nuevaCapacidad;
+        s->ordenes = nuevasO;
+        s->capacidadOrdenes = nuevaCap;
     }
     // Actualizamos el kilometraje del vehiculo al kilometraje de ingreso
     v->kilometraje = kilometrajeIngreso;
@@ -718,54 +674,28 @@ OrdenServicio* abrirOrden (SistemaTaller* s, int idVehiculo, int idMecanico, con
     // Guardamos la orden en el arreglo del taller
     s->ordenes[s->numOrdenes] = nueva;
     s->numOrdenes++;
-
     return &(s->ordenes[s->numOrdenes - 1]);
 }
 
 OrdenServicio* buscarOrdenPorID(SistemaTaller* s, int id) {
     for (int i = 0; i < s->numOrdenes; i++) {
-        if (s->ordenes[i].id == id) {
-            return &(s->ordenes[i]);
-        }
+        if (s->ordenes[i].id == id) return &(s->ordenes[i]);
     }
     return nullptr;
 }
 
 bool agregarRepuestoAOrden(SistemaTaller* s, int idOrden, int idRepuesto, int cantidad) {
     // La cantidad debe ser mayor a 0
-    if (cantidad <= 0) {
-        return false;
-    }
+    if (cantidad <= 0) return false;
 
     OrdenServicio* orden = buscarOrdenPorID(s, idOrden);
-    if (orden == nullptr) {
-        return false;
-    }
-
-    // Verificamos caracter por caracter que la orden este abierta
-    const char* p1 = orden->estado;
-    const char* p2 = "ABIERTA";
-    bool estaAbierta = true;
-    int j = 0;
-    while (p1[j] != '\0' && p2[j] != '\0') {
-        if (p1[j] != p2[j]) {
-            estaAbierta = false;
-            break;
-        }
-        j++;
-    }
-    if (!estaAbierta || p1[j] != '\0' || p2[j] != '\0') {
-        return false; // No se puede modificar si no esta abierta
-    }
+    if (orden == nullptr || !compararCadenasExactas(orden->estado, "ABIERTA")) return false;
 
     // Verificamos que el repuesto exista y tenga stock suficiente
     Repuesto* rep = buscarRepuestoPorID(s, idRepuesto);
-    if (rep == nullptr || rep->stock < cantidad) {
-        return false;
-    }
+    if (rep == nullptr || rep->stock < cantidad) return false;
 
-    // Descontamos las unidades del stock inmediatamente 
-    rep->stock -= cantidad;
+    rep->stock -= cantidad; //Descontar stock
 
     // Buscamos si el repuesto ya existe en alguna linea de detalle de esta orden
     for (int i = 0; i < orden->numDetalles; i++) {
@@ -778,16 +708,12 @@ bool agregarRepuestoAOrden(SistemaTaller* s, int idOrden, int idRepuesto, int ca
 
     // Si es un repuesto nuevo en la orden, verificamos si hay que redimensionar detalles
     if (orden->numDetalles >= orden->capacidadDetalles) {
-        int nuevaCapacidad = orden->capacidadDetalles * 2;
-        DetalleOrden* nuevosDetalles = new DetalleOrden[nuevaCapacidad];
-
-        for (int i = 0; i < orden->numDetalles; i++) {
-            nuevosDetalles[i] = orden->detalles[i];
-        }
-
+        int nuevaCap = orden->capacidadDetalles * 2;
+        DetalleOrden* nuevosD = new DetalleOrden[nuevaCap];
+        for (int i = 0; i < orden->numDetalles; i++) nuevosD[i] = orden->detalles[i];
         delete[] orden->detalles;
-        orden->detalles = nuevosDetalles;
-        orden->capacidadDetalles = nuevaCapacidad;
+        orden->detalles = nuevosD;
+        orden->capacidadDetalles = nuevaCap;
     }
 
     // Creamos la nueva linea guardando el precio vigente en este momento (Precio Historico)
@@ -801,47 +727,25 @@ bool agregarRepuestoAOrden(SistemaTaller* s, int idOrden, int idRepuesto, int ca
 
 bool quitarRepuestoDeOrden(SistemaTaller* s, int idOrden, int idRepuesto) {
     OrdenServicio* orden = buscarOrdenPorID(s, idOrden);
-    if (orden == nullptr) {
-        return false;
-    }
-
-    // Validar que la orden este abierta
-    const char* p1 = orden->estado;
-    const char* p2 = "ABIERTA";
-    bool estaAbierta = true;
-    int j = 0;
-    while (p1[j] != '\0' && p2[j] != '\0') {
-        if (p1[j] != p2[j]) {
-            estaAbierta = false;
-            break;
-        }
-        j++;
-    }
-    if (!estaAbierta || p1[j] != '\0' || p2[j] != '\0') {
-        return false;
-    }
+    if (orden == nullptr || !compararCadenasExactas(orden->estado, "ABIERTA")) return false;
 
     // Buscar el repuesto dentro del arreglo de detalles de la orden
-    int indiceEncontrado = -1;
+    int idx = -1;
     for (int i = 0; i < orden->numDetalles; i++) {
         if (orden->detalles[i].idRepuesto == idRepuesto) {
-            indiceEncontrado = i;
+            idx = i;
             break;
         }
     }
 
-    if (indiceEncontrado == -1) {
-        return false; // El repuesto no estaba en la orden
-    }
+    if (idx == -1) return false; // El repuesto no estaba en la orden
 
     // Devolver las unidades al inventario de repuestos
     Repuesto* rep = buscarRepuestoPorID(s, idRepuesto);
-    if (rep != nullptr) {
-        rep->stock += orden->detalles[indiceEncontrado].cantidad;
-    }
+    if (rep != nullptr) rep->stock += orden->detalles[idx].cantidad;
 
     // Desplazar los detalles siguientes hacia la izquierda para eliminar la linea
-    for (int i = indiceEncontrado; i < orden->numDetalles - 1; i++) {
+    for (int i = idx; i < orden->numDetalles - 1; i++) {
         orden->detalles[i] = orden->detalles[i + 1];
     }
 
@@ -851,35 +755,13 @@ bool quitarRepuestoDeOrden(SistemaTaller* s, int idOrden, int idRepuesto) {
 
 bool cerrarOrden(SistemaTaller* s, int idOrden, float manoObra, const char* fechaCierre) {
     // Validar mano de obra >= 0 y fecha no vacia
-    if (manoObra < 0.0f || fechaCierre[0] == '\0') {
-        return false;
-    }
+    if (manoObra < 0.0f || fechaCierre[0] == '\0') return false;
 
     OrdenServicio* orden = buscarOrdenPorID(s, idOrden);
-    if (orden == nullptr) {
-        return false;
-    }
-
-    // Validar que este abierta
-    const char* p1 = orden->estado;
-    const char* p2 = "ABIERTA";
-    bool estaAbierta = true;
-    int j = 0;
-    while (p1[j] != '\0' && p2[j] != '\0') {
-        if (p1[j] != p2[j]) {
-            estaAbierta = false;
-            break;
-        }
-        j++;
-    }
-    if (!estaAbierta || p1[j] != '\0' || p2[j] != '\0') {
-        return false;
-    }
+    if (orden == nullptr || !compararCadenasExactas(orden->estado, "ABIERTA")) return false;
 
     // Debe quedar con al menos una linea de detalle o mano de obra > 0
-    if (orden->numDetalles == 0 && manoObra <= 0.0f) {
-        return false;
-    }
+    if (orden->numDetalles == 0 && manoObra <= 0.0f) return false;
 
     // Actualizamos mano de obra, fecha de cierre y cambiamos estado a cerrada
     orden->manoObra = manoObra;
@@ -891,10 +773,10 @@ bool cerrarOrden(SistemaTaller* s, int idOrden, float manoObra, const char* fech
     }
     orden->fechaCierre[i] = '\0';
 
-    const char* estCerrada = "CERRADA";
+    const char* est = "CERRADA";
     i = 0;
-    while (estCerrada[i] != '\0' && i < 11) {
-        orden->estado[i] = estCerrada[i];
+    while (est[i] != '\0' && i < 11) {
+        orden->estado[i] = est[i];
         i++;
     }
     orden->estado[i] = '\0';
@@ -904,38 +786,18 @@ bool cerrarOrden(SistemaTaller* s, int idOrden, float manoObra, const char* fech
 
 bool anularOrden (SistemaTaller* s, int idOrden) {
     OrdenServicio* orden = buscarOrdenPorID(s, idOrden);
-    if (orden == nullptr) {
-        return false;
-    }
-
-    // Verificamos si ya esta anulada
-    const char* p1 = orden->estado;
-    const char* p2 = "ANULADA";
-    bool yaAnulada = true;
-    int j = 0;
-    while (p1[j] != '\0' && p2[j] != '\0') {
-        if (p1[j] != p2[j]) {
-            yaAnulada = false;
-            break;
-        }
-        j++;
-    }
-    if (yaAnulada && p1[j] == '\0' && p2 [j] == '\0') {
-        return false; // Ya estaba anulada
-    }
+    if (orden == nullptr || compararCadenasExactas(orden->estado, "ANULADA")) return false;
 
     // Devolvemos al inventario todas las unidades de cada linea de detalle
     for (int i = 0; i < orden->numDetalles; i++) {
         Repuesto* rep = buscarRepuestoPorID(s, orden->detalles[i].idRepuesto);
-        if (rep != nullptr) {
-            rep->stock += orden->detalles[i].cantidad;
-        }
+        if (rep != nullptr) rep->stock += orden->detalles[i].cantidad;
     }
     // Cambiamos el estado a "ANULADA"
-    const char* estAnulada = "ANULADA";
+    const char* est = "ANULADA";
     int i = 0;
-    while (estAnulada[i] != '\0' && i < 11) {
-        orden->estado[i] = estAnulada[i];
+    while (est[i] != '\0' && i < 11) {
+        orden->estado[i] = est[i];
         i++;
     }
     orden->estado[i] = '\0';
@@ -944,10 +806,7 @@ bool anularOrden (SistemaTaller* s, int idOrden) {
 }
 
 float calcularTotalOrden(OrdenServicio* orden) {
-    if (orden == nullptr) {
-        return 0.0f;
-    }
-
+    if (orden == nullptr) return 0.0f;
     float sumaRepuestos = 0.0f;
     for (int i = 0; i < orden->numDetalles; i++) {
         sumaRepuestos += (orden->detalles[i].cantidad * orden->detalles[i].precioUnitario);
@@ -1053,6 +912,7 @@ void menuPrincipal () {
     cout << "║ 4. Órdenes de Servicio                    ║" << endl;
     cout << "║ 0. Salir                                  ║" << endl;
     cout << "╚═══════════════════════════════════════════╝" << endl;
+    cout << "Seleccione una opcion: ";
 }
 
 void menuVehículos () {
@@ -1068,6 +928,7 @@ void menuVehículos () {
     cout << "║ 7. Mostrar lista de vehículos             ║" << endl;
     cout << "║ 0. Volver al menú principal               ║" << endl;
     cout << "╚═══════════════════════════════════════════╝" << endl;
+    cout << "Seleccione una opcion: ";
 }
 
 void mostrarVehiculo(Vehiculo v){
@@ -1147,38 +1008,21 @@ void uiRegistrarVehiculo(SistemaTaller* s){
     cout << "=== REGISTRAR NUEVO VEHICULO ===" << endl;
     Vehiculo nuevo;
 
-    cout << "Placa: ";
-    cin >> nuevo.placa;
-
-    cout << "Marca: ";
-    cin >> nuevo.marca;
-    
-    cout << "Modelo: ";
-    cin >> nuevo.modelo;
-    
-    cout << "Año: ";
-    cin >> nuevo.anio;
-    
-    cout << "Kilometraje: ";
-    cin >> nuevo.kilometraje;
+    cout << "Placa: "; cin >> nuevo.placa;
+    cout << "Marca: "; cin >> nuevo.marca;
+    cout << "Modelo: "; cin >> nuevo.modelo;
+    cout << "Año: "; cin >> nuevo.anio;
+    cout << "Kilometraje: "; cin >> nuevo.kilometraje;
     
     // Limpiamos el salto de linea antes de usar getline
     cin.ignore(10000, '\n');
+    cout << "Nombre del Propietario: "; cin.getline(nuevo.nombrePropietario, 100);
+    cout << "Cedula del Propietario: "; cin >> nuevo.cedulaPropietario;
+    cout << "Telefono del Propietario: "; cin >> nuevo.telefonoPropietario;
+    cout << "Fecha de Registro (YYYY-MM-DD): "; cin >> nuevo.fechaRegistro;
+
     
-    cout << "Nombre del Propietario: ";
-    cin.getline(nuevo.nombrePropietario, 100);
-
-    cout << "Cedula del Propietario: ";
-    cin >> nuevo.cedulaPropietario;
-
-    cout << "Telefono del Propietario: ";
-    cin >> nuevo.telefonoPropietario;
-
-    cout << "Fecha de Registro (YYYY-MM-DD): ";
-    cin >> nuevo.fechaRegistro;
-
-    Vehiculo* creado = agregarVehiculo(s, nuevo);
-    if (creado != nullptr) {
+    if (agregarVehiculo(s, nuevo) != nullptr) {
         cout << "\nVehiculo registrado exitosamente con ID asignado!" << endl;
     } else {
         cout << "\nERROR: No se pudo registrar el vehiculo." << endl;
@@ -1256,7 +1100,7 @@ void uiActualizarVehiculos(SistemaTaller* s){
 
     Vehiculo* v = buscarVehiculoPorID(s, id);
     if (v == nullptr){
-        cout << "\nMi loco no esxiste un vehiculo registrado con el ID " << id << "." << endl;
+        cout << "\nMi loco no existe un vehiculo registrado con el ID " << id << "." << endl;
         pausarylimpiar();
         return;
     }
@@ -1266,16 +1110,12 @@ void uiActualizarVehiculos(SistemaTaller* s){
 
     Vehiculo nuevosDatos;
     cout << "\nIngrese los nuevos datos: " << endl;
-    cout << "Nueva Marca: ";
-    cin >> nuevosDatos.marca;
-    cout << "Nuevo Modelo: ";
-    cin >> nuevosDatos.modelo;
-    cout << "Nuevo anio (1950 - 2027): ";
-    cin >> nuevosDatos.anio;
+    cout << "Nueva Marca: "; cin >> nuevosDatos.marca;
+    cout << "Nuevo Modelo: "; cin >> nuevosDatos.modelo;
+    cout << "Nuevo anio (1950 - 2027): "; cin >> nuevosDatos.anio;
 
     cin.ignore(10000, '\n');
-    cout << "Nuevo Nombre del Propietario: ";
-    cin.getline(nuevosDatos.nombrePropietario, 100);
+    cout << "Nuevo Nombre del Propietario: "; cin.getline(nuevosDatos.nombrePropietario, 100);
 
     for (int i = 0; i < 10; i++) nuevosDatos.placa[i] = v->placa[i];
 
@@ -1324,6 +1164,7 @@ void menuMecánicos () {
     cout << "║ 3. Listar todos los mecánicos             ║" << endl;
     cout << "║ 0. Volver al menú principal               ║" << endl;
     cout << "╚═══════════════════════════════════════════╝" << endl;
+    cout << "Seleccione una opcion: ";
 }
 
 void uiRegistrarMecanico(SistemaTaller* s){
@@ -1333,24 +1174,12 @@ void uiRegistrarMecanico(SistemaTaller* s){
 
     // Limpiamos el salto de linea antes de usar getline
     cin.ignore(10000, '\n');
+    cout << "Nombre del Mecanico: "; cin.getline(nuevo.nombre, 100);
+    cout << "Cedula: "; cin >> nuevo.cedula;
+    cout << "Especialidad (MOTOR, FRENOS, ELECTRICIDAD, SUSPENSION, GENERAL): "; cin >> nuevo.especialidad;
+    cout << "Fecha de Ingreso (YYYY-MM-DD): "; cin >> nuevo.fechaIngreso;
 
-    cout << "Nombre del Mecanico: ";
-    cin.getline(nuevo.nombre, 100);
-
-    cout << "Cedula: ";
-    cin >> nuevo.cedula;
-    
-    cout << "Especialidad (MOTOR, FRENOS, ELECTRICIDAD, SUSPENSION, GENERAL): ";
-    cin >> nuevo.especialidad;
-    
-    cout << "Fecha de Ingreso (YYYY-MM-DD): ";
-    cin >> nuevo.fechaIngreso;
-       
-    cin.ignore(10000, '\n');
-
-    Mecanico* creado = registrarMecanico(s, nuevo);
-
-    if (creado != nullptr) {
+    if (registrarMecanico(s, nuevo) != nullptr) {
     cout << "\nMecanico registrado exitosamente con ID asignado!" << endl;
     } else {
         cout << "\nERROR: No se pudo registrar el mecanico." << endl;
@@ -1419,6 +1248,7 @@ void menuRepuestos () {
     cout << "║ 6. Eliminar repuesto                      ║" << endl;
     cout << "║ 0. Volver al menú principal               ║" << endl;
     cout << "╚═══════════════════════════════════════════╝" << endl;
+    cout << "Seleccione una opcion: ";
 }
 
 void menuÓrdenes () {
@@ -1435,6 +1265,7 @@ void menuÓrdenes () {
     cout << "║ 8. Listar por estado/vehículo             ║" << endl;
     cout << "║ 0. Volver al menú principal               ║" << endl;
     cout << "╚═══════════════════════════════════════════╝" << endl;
+    cout << "Seleccione una opcion: ";
 }
 
 int main () {
@@ -1553,6 +1384,6 @@ int main () {
     delete[] miTaller.mecanicos;
     delete[] miTaller.repuestos;
     delete[] miTaller.ordenes;
-    
+
 return 0;
 }
