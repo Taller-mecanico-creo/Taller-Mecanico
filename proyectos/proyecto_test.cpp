@@ -956,6 +956,88 @@ float calcularTotalOrden(OrdenServicio* orden) {
     return orden->manoObra + sumaRepuestos;
 }
 
+OrdenServicio** listarOrdenesPorEstado(SistemaTaller* s, const char* estadoBuscado, int* cantidad) {
+    // Contar coincidencias de ordenes según estado
+    int encontrados = 0;
+    for (int i = 0; i < s->numOrdenes; i++) {
+        const char* p1 = s->ordenes[i].estado;
+        const char* p2 = estadoBuscado;
+        bool iguales = true;
+
+        int j = 0;
+        while (p1[j] != '\0' && p2[j] != '\0') {
+            if (p1[j] != p2[j]) {
+                iguales = false;
+                break;
+            }
+            j++;
+        }   
+
+    if (iguales && p1[j] == '\0' && p2[j] == '\0') {
+        encontrados++;
+        }
+    }
+
+    *cantidad = 0;
+    if (encontrados == 0) {
+        return nullptr;
+    }
+
+    // Reservar arreglo dinámico de ptr
+    OrdenServicio** resultados = new OrdenServicio*[encontrados];
+
+    // Llenar con las direcciones de las ordenes encontradas
+    int index = 0;
+    for (int i = 0; i < s->numOrdenes; i++) {
+        const char* p1 = s->ordenes[i].estado;
+        const char* p2 = estadoBuscado;
+        bool iguales = true;
+
+        int j = 0;
+        while (p1[j] != '\0' && p2[j] != '\0') {
+            if (p1[j] != p2[j]) {
+                iguales = false;
+                break;
+            }
+            j++;
+        }
+        if (iguales && p1[j] == '\0' && p2[j] == '\0') {
+            resultados[index] = &(s->ordenes[i]);
+            index++;
+        }
+    
+    }
+    *cantidad = encontrados;
+    return resultados;
+}
+
+OrdenServicio** listarOrdenesPorVehiculo(SistemaTaller* s, int idVehiculo, int* cantidad) {
+    // Contar cuantas ordenes pertenecen al vehículo
+    int encontrados =  0;
+    for (int i = 0; i < s->numOrdenes; i++) {
+        if (s->ordenes[i].idVehiculo == idVehiculo) {
+            encontrados++;
+        }
+    }
+    *cantidad = 0;
+    if (encontrados == 0) {
+        return nullptr;
+    }
+    // Reservar arreglo dinámico de ptr
+    OrdenServicio** resultados = new OrdenServicio*[encontrados];
+    
+    //Llenar con las direcciones de memoria
+    int index = 0;
+    for (int i = 0; i < s->numOrdenes; i++) {
+        if (s->ordenes[i].idVehiculo == idVehiculo) {
+            resultados[index] = &(s->ordenes[i]);
+            index++;
+        }
+    }
+    *cantidad = encontrados;
+    return resultados;
+}
+
 //=========================
 //      CAPA VISUAL
 //=========================
