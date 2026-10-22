@@ -3,7 +3,7 @@
 using namespace std;
 
 
-//sturcts
+//structs
 struct Taller{
     char nombre[100];
     char rif[20];
@@ -543,7 +543,7 @@ bool registrarEntradaMercancia(SistemaTaller* s, int idRepuesto, int cantidad){
     Repuesto* rep = buscarRepuestoPorID(s, idRepuesto);
     if (rep == nullptr) return false;
 
-    rep->stock =+ cantidad;
+    rep->stock += cantidad;
     return true;
 }
 
@@ -577,7 +577,7 @@ bool eliminarRepuesto(SistemaTaller* s, int idRepuesto){
 
     int idx = -1;
     for (int i = 0; i < s->numRepuestos; i++){
-        if (s->repuestos[i].id == idRepuesto){ idx = 1; break; }
+        if (s->repuestos[i].id == idRepuesto){ idx = i; break; }
     }
     if (idx == -1) return false;
 
@@ -1241,7 +1241,7 @@ void menuRepuestos () {
     cout << "║          INVENTARIO DE REPUESTOS          ║" << endl;
     cout << "╠═══════════════════════════════════════════╣" << endl;
     cout << "║ 1. Registrar repuesto                     ║" << endl;
-    cout << "║ 2. Buscar por ID                          ║" << endl;
+    cout << "║ 2. Buscar repuesto (ID / Código / Nombre) ║" << endl;
     cout << "║ 3. Registrar entrada de mercancía         ║" << endl;
     cout << "║ 4. Listar todos los repuestos             ║" << endl;
     cout << "║ 5. Cambiar precio                         ║" << endl;
@@ -1249,6 +1249,240 @@ void menuRepuestos () {
     cout << "║ 0. Volver al menú principal               ║" << endl;
     cout << "╚═══════════════════════════════════════════╝" << endl;
     cout << "Seleccione una opcion: ";
+}
+
+// Funcion auxiliar para mostrar un repuesto individual con su puntero
+void mostrarRepuesto(Repuesto* r) {
+    if (r == nullptr) return;
+    cout << "----------------------------------------" << endl;
+    cout << " ID           : " << r->id << endl;
+    cout << " Código       : " << r->codigo << endl;
+    cout << " Nombre       : " << r->nombre << endl;
+    cout << " Marca        : " << r->marca << endl;
+    cout << " Precio Unit. : $" << r->precio << endl;
+    cout << " Stock Actual : " << r->stock << " (Mínimo: " << r->stockMinimo << ")";
+
+    // Alerta de bajo stock
+    if (r->stock <= r->stockMinimo) {
+        cout << " <-- [ALERTA: BAJO STOCK]";
+    }
+    cout << endl;
+    cout << " Registro     : " << r->fechaRegistro << endl;
+}
+// Funcion auxiliar para mostrar un arreglo de punteros a repuestos
+void mostrarListaRepuestos(Repuesto** repuestos, int cantidad) {
+    if (repuestos == nullptr || cantidad <= 0) {
+        cout << "\n No hay repuestos para mostrar." << endl;
+        return;
+    }
+    cout << "\n=== LISTADO DE REPUESTOS (" << cantidad <<") ===" << endl;
+    for (int i = 0; i < cantidad; i++) {
+        mostrarRepuesto(repuestos[i]);
+    }
+    cout << "----------------------------------------" << endl;
+    cout << "Total de repuestos mostrados: " << cantidad << endl;
+}
+
+void uiRegistrarRepuesto(SistemaTaller* s) {
+    limpiar();
+    cout << "=== REGISTRAR NUEVO REPUESTO ===" << endl;
+    Repuesto nuevo;
+
+    cout << "Código (único, sin espacios, ej. FRN-001): ";
+    cin >> nuevo.codigo;
+
+    // Limpiamos el salto de linea para leer nombres con espacios
+    cin.ignore(10000, '\n');
+
+    cout << "Nombre del repuesto: "; cin.getline(nuevo.nombre, 100);
+    cout << "Marca: "; cin.getline(nuevo.marca, 50);
+    cout << "Precio unitario (>0): "; cin >> nuevo.precio;
+    cout << "Stock inicial (>= 0): "; cin >> nuevo.stock;
+    cout << "Stock mínimo para alerta (>= 0): "; cin >> nuevo.stockMinimo;
+    cout << "Fecha de registro (YYYY-MM-DD): "; cin >> nuevo.fechaRegistro;
+    cin.ignore(10000, '\n');
+
+    // Verificamos si el código ya existe para dar un mensaje de error
+    if (buscarRepuestoPorCodigo(s, nuevo.codigo) != nullptr) {
+        cout << "\nERROR: El código de repuesto '" << nuevo.codigo << "' ya está registrado." << endl;
+        pausarylimpiar();
+        return;
+    }
+
+    Repuesto* creado = registrarRepuesto(s, nuevo);
+    if (creado != nullptr) {
+        cout << "\nRepuesto '" << creado->nombre << "' registrado exitosamente con ID #" << creado->id << endl;
+    } else {
+        cout << "\nERROR: No se pudo registrar el repuesto (verifique precio, stock y campos no vacíos)." << endl;
+    }
+    pausarylimpiar();
+}
+
+void uiBuscarRepuesto(SistemaTaller* s) {
+    limpiar();
+    cout << "=== BUSCAR REPUESTO ===" << endl;
+    int op = 0;
+    cout << "Seleccione el modo de búsqueda:" << endl;
+    cout << "1. Buscar por ID" << endl;
+    cout << "2. Buscar por Código exacto" << endl;
+    cout << "3. Buscar por Nombre parcial" << endl;
+    cout << "Opción: ";
+    cin >> op;
+
+    switch (op) {
+        case 1: {
+            int idBuscado;
+            cout << "Ingrese el ID del repuesto: ";
+            cin >> idBuscado;
+            cin.ignore(10000, '\n');
+
+            Repuesto* ubicado = buscarRepuestoPorID (s, idBuscado);
+            if (ubicado != nullptr) {
+                cout << "\n¡Repuesto encontrado!" << endl;
+                mostrarRepuesto(ubicado);
+            } else {
+                cout << "\nERROR: No existe ningún repuesto con el ID #" << idBuscado << "." << endl;
+            }
+            break;
+        }
+        case 2: {
+            char codigoBuscado[20];
+            cout << "Ingrese el código exacto: ";
+            cin >> codigoBuscado;
+            cin.ignore(10000, '\n');
+
+            Repuesto* ubicado = buscarRepuestoPorCodigo(s, codigoBuscado);
+            if (ubicado != nullptr) {
+                cout << "\n¡Repuesto encontrado!" << endl;
+                mostrarRepuesto(ubicado);
+            } else {
+                cout << "\nERROR: No se encontró ningún repuesto con el código '" << codigoBuscado << "'." << endl;
+            }
+            break;
+        }
+        case 3: {
+            char subcadena[100];
+            cin.ignore(10000, '\n');
+            cout << "Ingrese parte del nombre del repuesto: ";
+            cin.getline(subcadena, 100);
+
+            int cantidad = 0;
+            Repuesto** resultados = buscarRepuestosPorNombreParcial(s, subcadena, &cantidad);
+            if (resultados != nullptr) {
+                mostrarListaRepuestos(resultados, cantidad);
+                // Regla de memoria: liberamos el arreglo temporal de punteros
+                delete[] resultados;
+            } else {
+                cout << "\nNo se encontraron repuestos que coincidan con '" << subcadena << "'." << endl;
+            }
+            break;
+        }
+        default: {
+            cin.ignore(10000, '\n');
+            cout << "\nOpción de búsqueda inválida." << endl;
+            break;
+        }
+    }
+    pausarylimpiar();
+}
+
+void uiEntradaMercancia(SistemaTaller* s) {
+    limpiar();
+    cout << "=== REGISTRAR ENTRADA DE MERCANCÍA ===" << endl;
+    int idRepuesto, cantidad;
+
+    cout << "Ingrese el ID del repuesto: ";
+    cin >> idRepuesto;
+
+    Repuesto* rep = buscarRepuestoPorID(s, idRepuesto);
+    if (rep == nullptr) {
+        cin.ignore(10000, '\n');
+        cout << "\nERROR: No existe un repuesto con el ID #" << idRepuesto << "." << endl;
+        pausarylimpiar();
+        return;
+    }   
+    cout << "Repuesto seleccionado: " << rep->nombre << " (Stock actual: " << rep->stock << ")" << endl;
+    cout << "Ingrese la cantidad de unidades que ingresan (> 0): ";
+    cin >> cantidad;
+    cin.ignore(10000, '\n');
+
+    if (registrarEntradaMercancia(s, idRepuesto, cantidad)) {
+        cout << "\n¡Entrada registrada! Nuevo stock de '" << rep->nombre << " unidades." << endl;
+    } else { 
+        cout << "\nERROR: La cantidad a ingresar debe ser mayor a 0." << endl;
+    }
+    pausarylimpiar();
+}
+
+void uiListarRepuestos(SistemaTaller* s) {
+    limpiar();
+    int cantidad = 0;
+    Repuesto** lista = listarRepuestos(s, &cantidad);
+
+    if (lista != nullptr) {
+        mostrarListaRepuestos(lista, cantidad);
+        // Liberamos el arreglo de ptrs retornado por la lógica
+        delete[] lista;
+    } else {
+        cout << "\nNo hay repuestos registrados en el inventario." << endl;
+    }
+    cin.ignore(10000, '\n');
+    pausarylimpiar();
+}
+
+void uiCambiarPrecioRepuesto(SistemaTaller* s) {
+    limpiar();
+    cout << "=== CAMBIAR PRECIO DE REPUESTO ===" << endl;
+    int idRepuesto;
+    float nuevoPrecio;
+
+    cout << "Ingrese el ID del repuesto: ";
+    cin >> idRepuesto;
+
+    Repuesto* rep = buscarRepuestoPorID(s, idRepuesto);
+    if (rep == nullptr) {
+        cin.ignore(10000, '\n');
+        cout <<"\nERROR: No existe un repuesto con el ID #" << idRepuesto << "." << endl;
+        pausarylimpiar();
+        return;
+    }
+
+    cout << "Repuesto: " << rep->nombre << " | Precio actual: $" << rep->precio << "." << endl;
+    cout << "Ingrese el nuevo precio unitario (> 0): ";
+    cin >> nuevoPrecio;
+    cin.ignore(10000, '\n');
+
+    if (cambiarPrecioRepuesto(s, idRepuesto, nuevoPrecio)) {
+        cout << "\nPrecio actualizado exitosamente a $" << rep->precio  << "." << endl;
+        cout << "(Nota: Las órdenes registradas previamente mantienen su precio histórico)." << endl;
+    } else {
+        cout << "\nERRROR: El precio debe ser mayor o igual a 0." << endl;
+    }
+    pausarylimpiar();
+}
+
+void uiEliminarRepuesto(SistemaTaller* s) {
+    limpiar();
+    cout << "=== ELIMINAR REPUESTO ===" << endl;
+    int idRepuesto;
+
+    cout << "Ingrese el ID del repuesto a eliminar: ";
+    cin >> idRepuesto;
+    cin.ignore(10000, '\n');
+
+    Repuesto* rep = buscarRepuestoPorID(s, idRepuesto);
+    if (rep == nullptr) {
+        cout << "\nERROR: No existe ningún repuesto con el ID #" << idRepuesto << "." << endl;
+        pausarylimpiar();
+        return;
+    }
+
+    if (eliminarRepuesto(s, idRepuesto)) {
+        cout << "\nRepuesto eliminado del inventario." << endl;
+    } else {
+        cout << "\nERROR: El repuesto '" << rep->nombre << "' está registrado en una o más órdenes de servicio y no puede eliminarse." << endl;
+    }
+    pausarylimpiar();
 }
 
 void menuÓrdenes () {
@@ -1266,6 +1500,12 @@ void menuÓrdenes () {
     cout << "║ 0. Volver al menú principal               ║" << endl;
     cout << "╚═══════════════════════════════════════════╝" << endl;
     cout << "Seleccione una opcion: ";
+}
+
+void uiAbrirOrden (SistemaTaller* s) {
+
+
+
 }
 
 int main () {
@@ -1317,6 +1557,7 @@ int main () {
                             break;
                         }
                         default: {
+                            cin.ignore(10000, '\n');
                             cout << "Opcion invalida." << endl;
                             pausarylimpiar();
                             break;
@@ -1345,6 +1586,7 @@ int main () {
                             break;  
                         }
                         default: {
+                            cin.ignore(10000, '\n');
                             cout << "Opcion invalida." << endl;
                             pausarylimpiar();
                             break;
@@ -1356,12 +1598,42 @@ int main () {
             
 
             } case 3: {
-                limpiar();
-                menuRepuestos();
-                cin >> opcion;
+                do {
+                    limpiar();
+                    menuRepuestos();
+                    cin >> opcion2;
+
+                    switch (opcion2) {
+                        case 1: {
+                            uiRegistrarRepuesto(&miTaller);
+                            break;
+                        } case 2: {
+                            uiBuscarRepuesto(&miTaller);
+                            break;
+                        } case 3: {
+                            uiEntradaMercancia(&miTaller);
+                            break;
+                        } case 4: {
+                            uiListarRepuestos(&miTaller);
+                            break;
+                        } case 5: {
+                            uiCambiarPrecioRepuesto(&miTaller);
+                            break;
+                        }   case 6: {
+                            uiEliminarRepuesto(&miTaller);
+                            break;
+                        } case 0: {
+                            break;
+                        } default: {
+                            cin.ignore(10000, '\n');
+                            cout << "Opcion invalida." << endl;
+                            pausarylimpiar();
+                            break;
+                        }
+                    }
+                } while(opcion2 != 0);
                 limpiar();
                 break;
-
             } case 4: {
                 limpiar();
                 menuÓrdenes();
@@ -1379,6 +1651,19 @@ int main () {
         }
 
     } while (opcion != 0);
+
+    // 1. Liberar primero el arreglo de detalles de cada orden
+    for (int i = 0; i < miTaller.numOrdenes; i++) {
+        if (miTaller.ordenes[i].detalles != nullptr) {
+            delete[] miTaller.ordenes[i].detalles;
+            miTaller.ordenes[i].detalles = nullptr;
+        }
+    }
+
+    // Liberar la memoria dinamica anidada primero (detalles de cada orden)
+    for (int i = 0; i < miTaller.numOrdenes; i++) {
+        delete[] miTaller.ordenes[i].detalles;
+    }
 
     delete[] miTaller.vehiculos;
     delete[] miTaller.mecanicos;
