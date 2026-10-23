@@ -129,6 +129,72 @@ bool compararSubcadenaIgnoreCase(const char* nombre, const char* sub){
     return false;
 }
 
+bool esCancelar(const char* texto){
+    const char* palabra = "cancelar";
+    int i = 0;
+    while (texto[i] != '\0' && palabra[i] != '\0'){
+        if (aMinuscula(texto[i]) != palabra[i]) return false;
+        i++;
+    }
+    return texto[i] == '\0' && palabra[i] =='\0';
+}
+
+bool validarPlaca(const char* placa){
+    int len = 0;
+    while (placa[len] != '\0'){
+        char c = placa[len];
+        bool esLetra = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+        bool esDigito = (c >= '0' && c <= '9');
+        if (!esLetra && !esDigito) return false;
+        len++;
+    }
+    return (len >= 6 && len <= 7);
+}
+
+bool validarCedula(const char* cedula){
+    if (cedula[0] == '\0') return false;
+    int i = 0;
+    if ((cedula[0] == 'V' || cedula[0] == 'v' ||
+         cedula[0] == 'E' || cedula[0] == 'e' ||
+         cedula[0] == 'J' || cedula[0] == 'j') && cedula[1] == '-'){
+        i=2;
+    }
+    if (cedula[i] =='\0') return false;
+    while (cedula[i] != '\0'){
+        if (cedula[i] < '0' || cedula [i] > '9') return false;
+        i++;
+    }
+    return true;
+}
+
+bool validarFecha(const char* f){
+    int len = 0;
+    while (f[len] != '\0') len++;
+    if (len != 10) return false;
+    if (f[4] != '-' || f[7] != '-') return false;
+
+    for (int i = 0; i < 10; i++){
+        if (i == 4 || i == 7)continue;
+        if (f[i] < '0' || f[i] > '9') return false;
+    }
+
+    int anio = (f[0] - '0') * 1000 + (f[1] - '0') * 100 + (f[2] - '0') * 10 + (f[3] - '0');
+    int mes  = (f[5] - '0') * 10 + (f[6] - '0');
+    int dia  = (f[8] - '0') * 10 + (f[9] - '0');
+    
+    if (anio < 1950 || anio > 2100) return false;
+    if (mes < 1 || mes > 12) return false;
+    if (dia < 1 || dia > 31) return false;
+    return true;
+}
+
+bool pedirConfirmacion(const char* mensaje){
+    char resp;
+    cout << mensaje << " (S/N): ";
+    cin >> resp;
+    return (resp == 'S' || resp == 's');
+}
+
 //por si acaso
 Vehiculo* buscarVehiculoPorPlaca(SistemaTaller* s, const char* placa);
 Vehiculo* buscarVehiculoPorID(SistemaTaller* s, int id);
@@ -138,48 +204,67 @@ Repuesto* buscarRepuestoPorCodigo(SistemaTaller* s, const char* codigo);
 OrdenServicio* buscarOrdenPorID(SistemaTaller* s, int id);
 
 //==========================================
-//       CAPA DE LOGICA: INICIALIZACION
+//       CAPA DE LOGICA: SISTEMA
 //==========================================
 
 //Inializar el sistema (reserva capacidad 4 para entidades y 2 para detalles)
 void inicializarSistema(SistemaTaller* s, const char* nombre, const char* rif, const char* direccion, const char* telefono){
     
     //1. Copiar datos del taller caracter a caracter
-    for(int i = 0; i < 99 && nombre[i] != '\0'; i++) s->taller.nombre[i] = nombre[i];
-    s->taller.nombre[99] = '\0';
+    int i = 0;
+    for(i = 0; i < 99 && nombre[i] != '\0'; i++) s->taller.nombre[i] = nombre[i];
+    s->taller.nombre[i] = '\0';
 
-    for(int i = 0; i < 19 && rif[i] != '\0'; i++) s->taller.rif[i] = rif[i];
-    s->taller.rif[19] = '\0';
+    for(i = 0; i < 19 && rif[i] != '\0'; i++) s->taller.rif[i] = rif[i];
+    s->taller.rif[i] = '\0';
 
-    for(int i = 0; i < 199 && direccion[i] != '\0'; i++) s->taller.direccion[i] = direccion[i];
-    s->taller.direccion[199] = '\0';
+    for(i = 0; i < 199 && direccion[i] != '\0'; i++) s->taller.direccion[i] = direccion[i];
+    s->taller.direccion[i] = '\0';
 
-    for(int i = 0; i < 19 && telefono[i] != '\0'; i++) s->taller.telefono[i] = telefono[i];
-    s->taller.telefono[19] = '\0';
+    for(i = 0; i < 19 && telefono[i] != '\0'; i++) s->taller.telefono[i] = telefono[i];
+    s->taller.telefono[i] = '\0';
 
     //2. Poner contadores en cero
     s->numVehiculos = 0;
     s->numMecanicos = 0;
     s->numRepuestos = 0;
-    s->numOrdenes = 0;
+    s->numOrdenes   = 0;
 
     //3. Capacidades iniciales en en 4
     s->capacidadVehiculos = 4;
     s->capacidadMecanicos = 4;
     s->capacidadRepuestos = 4;
-    s->capacidadOrdenes = 4;
+    s->capacidadOrdenes   = 4;
 
     //4. Reservar memoria dinamica con new
     s->vehiculos = new Vehiculo[s->capacidadVehiculos];
     s->mecanicos = new Mecanico[s->capacidadMecanicos];
     s->repuestos = new Repuesto[s->capacidadRepuestos];
-    s->ordenes = new OrdenServicio[s->capacidadOrdenes];
+    s->ordenes   = new OrdenServicio[s->capacidadOrdenes];
 
     //5. IDs en 1
     s->siguienteIdVehiculo = 1;
     s->siguienteIdMecanico = 1;
     s->siguienteIdRepuesto = 1;
-    s->siguienteIdOrden = 1;
+    s->siguienteIdOrden    = 1;
+}
+
+void liberarSistema(SistemaTaller* s) {
+    if (s == nullptr) return;
+
+    // Liberar primero la memoria anidada (arreglo de detalles de cada orden)
+    for (int i = 0; i < s->numOrdenes; i++) {
+        if (s->ordenes[i].detalles != nullptr) {
+            delete[] s->ordenes[i].detalles;
+            s->ordenes[i].detalles = nullptr;
+        }
+    }
+
+    // Liberar los arreglos principales de entidades
+    delete[] s->vehiculos; s->vehiculos = nullptr;
+    delete[] s->mecanicos; s->mecanicos = nullptr;
+    delete[] s->repuestos; s->repuestos = nullptr;
+    delete[] s->ordenes;   s->ordenes   = nullptr;
 }
 
 //==========================================
@@ -192,7 +277,12 @@ Vehiculo* agregarVehiculo(SistemaTaller* s, Vehiculo datos){
         datos.nombrePropietario[0] == '\0' || datos.cedulaPropietario[0] == '\0') {
         return nullptr;
     }
-    
+
+    // Validamos los formatos de placa, cedula y fecha
+    if (!validarPlaca(datos.placa) || !validarCedula(datos.cedulaPropietario) || !validarFecha(datos.fechaRegistro)) {
+        return nullptr;
+    }
+
     //Validamos anio (1950 - 2027) y kilometraje (>=0)
     if(datos.anio < 1950 || datos.anio > 2027 || datos.kilometraje < 0) return nullptr;
     
@@ -296,25 +386,24 @@ Vehiculo** listarVehiculos(SistemaTaller* s, int* cantidad){
 }
 
 bool actualizarVehiculo(SistemaTaller* s, int id, Vehiculo nuevosDatos){
-    //1.Buscamos el vehiculo en el arreglo
+    //Buscamos el vehiculo en el arreglo
     Vehiculo* v = buscarVehiculoPorID(s, id);
 
     //Si no existe, retornamos falso
     if (v == nullptr) return false;
 
+    // Validar que los nuevos datos sean validos
+    if (nuevosDatos.anio < 1950 || nuevosDatos.anio > 2027) return false;
+    if (nuevosDatos.marca[0] == '\0' || nuevosDatos.modelo[0] == '\0' ||
+        nuevosDatos.nombrePropietario[0] == '\0' || !validarCedula(nuevosDatos.cedulaPropietario) ||
+        nuevosDatos.telefonoPropietario[0] == '\0') {
+        return false;
+        }
     //Actualizamos los campos numericos directamente
     v->anio = nuevosDatos.anio;
 
-    //Copiamos la placa caracter por caracter
-    int i = 0;
-    while(nuevosDatos.placa[i] != '\0' && i < 9){
-        v->placa[i] = nuevosDatos.placa[i];
-        i++;
-    }
-    v->placa[i] = '\0';
-
     //Copiamos la marca caracter por caracter
-    i = 0;
+    int i = 0;
     while(nuevosDatos.marca[i] != '\0' && i < 49){
         v->marca[i] = nuevosDatos.marca[i];
         i++;
@@ -336,6 +425,22 @@ bool actualizarVehiculo(SistemaTaller* s, int id, Vehiculo nuevosDatos){
         i++;
     }
     v->nombrePropietario[i] = '\0';
+
+    //Copiamos la cedula del propietario caracter a caracter
+    i = 0;
+    while (nuevosDatos.cedulaPropietario[i] != '\0' && i < 19) {
+        v->cedulaPropietario[i] = nuevosDatos.cedulaPropietario[i];
+        i++;
+    }
+    v->cedulaPropietario[i] = '\0';
+
+    //Copiamos la cedula del propietario caracter a caracter
+    i = 0;
+    while (nuevosDatos.telefonoPropietario[i] != '\0' && i < 19) {
+        v->telefonoPropietario[i] = nuevosDatos.telefonoPropietario[i];
+        i++;
+    }
+    v->telefonoPropietario[i] = '\0';
 
     return true; //actualizacion exitante
 }
@@ -391,7 +496,7 @@ Mecanico* buscarMecanicoPorID(SistemaTaller* s, int id) {
 
 Mecanico* registrarMecanico(SistemaTaller* s, Mecanico datos) {
     // Validamos que los campos no estén vacíos y la especialidad sea válida
-    if (datos.nombre[0] == '\0' || datos.cedula[0] == '\0') {
+    if (datos.nombre[0] == '\0' || !validarCedula(datos.cedula) || !validarFecha(datos.fechaIngreso)) {
         return nullptr;
     }
     // Validar que la especialidad sea una de las 5 permitidas caracter por caracter
@@ -517,7 +622,7 @@ Repuesto** buscarRepuestosPorNombreParcial(SistemaTaller* s, const char* subcade
 Repuesto* registrarRepuesto(SistemaTaller* s, Repuesto datos){
     //Validaciones de negocio (Precio > 0, Stock >= 0, Stockminimo >=0, codigo unico???)
     if (datos.codigo[0] == '\0' || datos.nombre[0] == '\0' ||
-        datos.precio <= 0.0f || datos.stock < 0 || datos.stockMinimo < 0) {
+        datos.precio <= 0.0f || datos.stock < 0 || datos.stockMinimo < 0 || !validarFecha(datos.fechaRegistro)) {
         return nullptr;
     }
     if  (buscarRepuestoPorCodigo(s, datos.codigo) != nullptr) return nullptr;
@@ -604,7 +709,7 @@ OrdenServicio* buscarOrdenAbiertaVehiculo(SistemaTaller* s, int idVehiculo){
 
 OrdenServicio* abrirOrden (SistemaTaller* s, int idVehiculo, int idMecanico, const char* fechaApertura, const char* descripcionFalla, int kilometrajeIngreso) {
     // Validamos que la fecha y la descripcion de la falla no esten vacias
-    if (fechaApertura[0] == '\0' || descripcionFalla[0] == '\0') {
+    if (!validarFecha(fechaApertura) || descripcionFalla[0] == '\0') {
         return nullptr;
     }
     // Verificamos la existencia de vehículos y mecánicos
@@ -755,7 +860,7 @@ bool quitarRepuestoDeOrden(SistemaTaller* s, int idOrden, int idRepuesto) {
 
 bool cerrarOrden(SistemaTaller* s, int idOrden, float manoObra, const char* fechaCierre) {
     // Validar mano de obra >= 0 y fecha no vacia
-    if (manoObra < 0.0f || fechaCierre[0] == '\0') return false;
+    if (manoObra < 0.0f || !validarFecha(fechaCierre)) return false;
 
     OrdenServicio* orden = buscarOrdenPorID(s, idOrden);
     if (orden == nullptr || !compararCadenasExactas(orden->estado, "ABIERTA")) return false;
@@ -932,15 +1037,16 @@ void menuVehículos () {
     cout << "Seleccione una opcion: ";
 }
 
-void mostrarVehiculo(Vehiculo v){
+void mostrarVehiculo(Vehiculo* v){
+    if (v == nullptr) return;
     cout << "----------------------------------------" << endl;
-    cout << " ID          : " << v.id << endl;
-    cout << " Placa       : " << v.placa << endl;
-    cout << " Marca/Modelo: " << v.marca << " " << v.modelo << " (" << v.anio << ")" << endl;
-    cout << " Kilometraje : " << v.kilometraje << " km" << endl;
-    cout << " Propietario : " << v.nombrePropietario << "(CI:" << v.cedulaPropietario << ")" << endl;
-    cout << " Telefono    : " << v.telefonoPropietario << endl;
-    cout << " Registro    : " << v.fechaRegistro << endl;
+    cout << " ID          : " << v->id << endl;
+    cout << " Placa       : " << v->placa << endl;
+    cout << " Marca/Modelo: " << v->marca << " " << v->modelo << " (" << v->anio << ")" << endl;
+    cout << " Kilometraje : " << v->kilometraje << " km" << endl;
+    cout << " Propietario : " << v->nombrePropietario << "(CI:" << v->cedulaPropietario << ")" << endl;
+    cout << " Telefono    : " << v->telefonoPropietario << endl;
+    cout << " Registro    : " << v->fechaRegistro << endl;
 }
 
 void mostrarListaVehiculos(Vehiculo** vehiculos, int cantidad){
@@ -950,7 +1056,7 @@ void mostrarListaVehiculos(Vehiculo** vehiculos, int cantidad){
     }
     cout << "\n=== LISTADO DE VEHICULOS (" << cantidad << ") ===" << endl;
     for (int i = 0; i < cantidad; i ++){
-        mostrarVehiculo(*(vehiculos[i]));
+        mostrarVehiculo((vehiculos[i]));
     }
     cout << "----------------------------------------" << endl;
 }
@@ -974,6 +1080,7 @@ void mostrarVehiculoIndividual(SistemaTaller* s){
     } else{
         cout << "\nNo se encontro ningun vehiculo con el ID " << id << "." << endl;
     }
+    cin.ignore(10000, '\n');
     pausarylimpiar();
 }
 
@@ -999,39 +1106,84 @@ void mostrarListaVehiculosCompleta(SistemaTaller* s){
 
         delete[] lista;
     } else{
-        cout << "\n No hay vahiculos registrados en el sistema." << endl;
-        pausarylimpiar();
-    }
-}
-
-void uiRegistrarVehiculo(SistemaTaller* s){
-    limpiar();
-    cout << "=== REGISTRAR NUEVO VEHICULO ===" << endl;
-    Vehiculo nuevo;
-
-    cout << "Placa: "; cin >> nuevo.placa;
-    cout << "Marca: "; cin >> nuevo.marca;
-    cout << "Modelo: "; cin >> nuevo.modelo;
-    cout << "Año: "; cin >> nuevo.anio;
-    cout << "Kilometraje: "; cin >> nuevo.kilometraje;
-    
-    // Limpiamos el salto de linea antes de usar getline
-    cin.ignore(10000, '\n');
-    cout << "Nombre del Propietario: "; cin.getline(nuevo.nombrePropietario, 100);
-    cout << "Cedula del Propietario: "; cin >> nuevo.cedulaPropietario;
-    cout << "Telefono del Propietario: "; cin >> nuevo.telefonoPropietario;
-    cout << "Fecha de Registro (YYYY-MM-DD): "; cin >> nuevo.fechaRegistro;
-
-    
-    if (agregarVehiculo(s, nuevo) != nullptr) {
-        cout << "\nVehiculo registrado exitosamente con ID asignado!" << endl;
-    } else {
-        cout << "\nERROR: No se pudo registrar el vehiculo." << endl;
+        cout << "\n No hay vehiculos registrados en el sistema." << endl;
     }
     cin.ignore(10000, '\n');
     pausarylimpiar();
 }
 
+void uiRegistrarVehiculo(SistemaTaller* s){
+    limpiar();
+    cout << "=== REGISTRAR NUEVO VEHICULO ===" << endl;
+    cout << "(Escriba CANCELAR para abortar)." << endl;
+    Vehiculo nuevo;
+
+    cout << "Placa: "; cin >> nuevo.placa;
+    if (esCancelar(nuevo.placa)){
+        cout <<"\nRegistro cancelado por el usuario." << endl;
+        cin.ignore(10000, '\n');
+        pausarylimpiar();
+        return;
+    }
+    cout << "Marca: "; cin >> nuevo.marca;
+    if (esCancelar(nuevo.marca)){
+        cout <<"\nRegistro cancelado por el usuario." << endl;
+        cin.ignore(10000, '\n');
+        pausarylimpiar();
+        return;
+    }
+    cout << "Modelo: "; cin >> nuevo.modelo;
+    if (esCancelar(nuevo.modelo)){
+        cout <<"\nRegistro cancelado por el usuario." << endl;
+        cin.ignore(10000, '\n');
+        pausarylimpiar();
+        return;
+    }
+    cout << "Año (1950-2027): "; cin >> nuevo.anio;
+    cout << "Kilometraje (>= 0): "; cin >> nuevo.kilometraje;
+    
+    // Limpiamos el salto de linea antes de usar getline
+    cin.ignore(10000, '\n');
+    cout << "Nombre del Propietario: "; cin.getline(nuevo.nombrePropietario, 100);
+    if (esCancelar(nuevo.nombrePropietario)) {
+        cout << "\nRegistro cancelado por el usuario." << endl;
+        pausarylimpiar();
+        return;
+    }
+    cout << "Cedula del Propietario: "; cin >> nuevo.cedulaPropietario;
+    if (esCancelar(nuevo.cedulaPropietario)) {
+        cout << "\nRegistro cancelado por el usuario." << endl;
+        cin.ignore(10000, '\n');
+        pausarylimpiar();
+        return;
+    }
+    cout << "Telefono del Propietario: "; cin >> nuevo.telefonoPropietario;
+    cout << "Fecha de Registro (YYYY-MM-DD): "; cin >> nuevo.fechaRegistro;
+
+    if (buscarVehiculoPorPlaca(s, nuevo.placa) != nullptr) {
+        cout << "\nERROR: La placa '" << nuevo.placa << "' ya está registrada." << endl;
+        cin.ignore(10000, '\n');
+        pausarylimpiar();
+        return;
+    }
+
+    if (!pedirConfirmacion("\n¿Confirmar el registro del vehículo?")) {
+        cout << "\nRegistro cancelado." << endl;
+        cin.ignore(10000, '\n');
+        pausarylimpiar();
+        return;
+    }
+
+    Vehiculo* creado = agregarVehiculo(s, nuevo);
+    if (creado != nullptr) {
+        cout << "\nVehiculo '" << creado->placa << "' registrado exitosamente con ID #" << creado->id << "." << endl;
+    } else {
+        cout << "\nERROR: No se pudo registrar el vehiculo (verifique los campos anteriores)." << endl;
+    }
+    cin.ignore(10000, '\n');
+    pausarylimpiar();
+}
+    
 void uiBuscarVehiculo(SistemaTaller* s) {
     limpiar();
     cout << "=== BUSCAR VEHICULO ===" << endl;
@@ -1047,24 +1199,26 @@ void uiBuscarVehiculo(SistemaTaller* s) {
             int idBuscado;
             cout << "Ingrese un ID registrado: ";
             cin >> idBuscado;
+            cin.ignore(10000, '\n');
     
             Vehiculo* ubicado = buscarVehiculoPorID(s, idBuscado);
             if (ubicado != nullptr) {
-                cout << "\nVehiculo ubicado con ID: " << ubicado->id << endl;
+                mostrarVehiculo(ubicado);
             } else {
-                cout << "\nVehiculo no registrado (sin coincidencias)." << endl;
+                cout << "\nERROR: No existe ningún vehículo con el ID #" << idBuscado << "."<< endl;
             }
             break; 
         }case 2:{
             char placaBuscada[10];
             cout << "Ingrese la placa exacta: ";
             cin >> placaBuscada;
+            cin.ignore(10000, '\n');
 
             Vehiculo* ubicado = buscarVehiculoPorPlaca(s, placaBuscada);
             if (ubicado != nullptr){
-                mostrarVehiculo(*ubicado);
+                mostrarVehiculo(ubicado);
             } else{
-                cout << "\nBad milk. No se encontro ningun vehiculo con esa placa." << endl;
+                cout << "\nError: No se encontro ningun vehiculo con la placa '" << placaBuscada << "'." << endl;
             }
             break;
         }case 3:{
@@ -1083,11 +1237,11 @@ void uiBuscarVehiculo(SistemaTaller* s) {
             }
             break;
         }default:{
+            cin.ignore(10000, '\n');
             cout << "\nOpcion validan't." << endl;
             break;
         }
     } 
-    cin.ignore(10000, '\n');
     pausarylimpiar();
 }
 
@@ -1100,30 +1254,37 @@ void uiActualizarVehiculos(SistemaTaller* s){
 
     Vehiculo* v = buscarVehiculoPorID(s, id);
     if (v == nullptr){
-        cout << "\nMi loco no existe un vehiculo registrado con el ID " << id << "." << endl;
+        cout << "\nError: No existe un vehiculo registrado con el ID " << id << "." << endl;
         cin.ignore(10000, '\n');
         pausarylimpiar();
         return;
     }
 
     cout << "\nVehiculo actual encontrado: " << endl;
-    mostrarVehiculo(*v);
+    mostrarVehiculo(v);
 
     Vehiculo nuevosDatos;
-    cout << "\nIngrese los nuevos datos: " << endl;
+    cout << "\nIngrese los nuevos datos (Placa y kilometraje no se modifican): " << endl;
     cout << "Nueva Marca: "; cin >> nuevosDatos.marca;
     cout << "Nuevo Modelo: "; cin >> nuevosDatos.modelo;
     cout << "Nuevo anio (1950 - 2027): "; cin >> nuevosDatos.anio;
 
     cin.ignore(10000, '\n');
     cout << "Nuevo Nombre del Propietario: "; cin.getline(nuevosDatos.nombrePropietario, 100);
-
-    for (int i = 0; i < 10; i++) nuevosDatos.placa[i] = v->placa[i];
+    cout << "Nueva Cédula del Propietario: "; cin >> nuevosDatos.cedulaPropietario;
+    cout << "Nuevo Teléfono del Propietario: "; cin >> nuevosDatos.telefonoPropietario;
+    
+    if (!pedirConfirmacion("\nConfirmar la actualizacion del vehiculo?")){
+        cout << "\nActualización cancelada." << endl;
+        cin.ignore(10000, '\n');
+        pausarylimpiar();
+        return; 
+    }
 
     if (actualizarVehiculo(s, id, nuevosDatos)){
         cout << "\nVehiculo actualizado sasticfactoriamente." << endl;
     } else{
-        cout << "\nError al actualizar (verifique el anio)." << endl;
+        cout << "\nError: No se pudo actualizar (verifique el año entre 1950-2027) y cédula válida." << endl;
     }
     cin.ignore(10000, '\n');
     pausarylimpiar();
@@ -1417,7 +1578,7 @@ void uiEntradaMercancia(SistemaTaller* s) {
     cin.ignore(10000, '\n');
 
     if (registrarEntradaMercancia(s, idRepuesto, cantidad)) {
-        cout << "\n¡Entrada registrada! Nuevo stock de '" << rep->nombre << " unidades." << endl;
+        cout << "\n¡Entrada registrada! Nuevo stock de '" << rep->nombre << "': " << rep->stock << "unidades." << endl;
     } else { 
         cout << "\nERROR: La cantidad a ingresar debe ser mayor a 0." << endl;
     }
@@ -1507,8 +1668,7 @@ void menuÓrdenes () {
     cout << "║ 4. Cerrar orden                           ║" << endl;
     cout << "║ 5. Anular orden                           ║" << endl;
     cout << "║ 6. Ver detalle de orden                   ║" << endl;
-    cout << "║ 7. Buscar por ID                          ║" << endl;
-    cout << "║ 8. Listar por estado/vehículo             ║" << endl;
+    cout << "║ 7. Listar órdenes                         ║" << endl;
     cout << "║ 0. Volver al menú principal               ║" << endl;
     cout << "╚═══════════════════════════════════════════╝" << endl;
     cout << "Seleccione una opcion: ";
@@ -1516,6 +1676,7 @@ void menuÓrdenes () {
 
 void uiAbrirOrden(SistemaTaller* s){
     limpiar();
+    cout << "=== ABRIR ORDEN DE SERVICIO ===" << endl;
     int idV, idM, km;
     char fecha[11], falla[200];
 
@@ -1526,11 +1687,51 @@ void uiAbrirOrden(SistemaTaller* s){
     cin.ignore(10000, '\n');
     cout << "Descripcion de la falla: "; cin.getline(falla, 200);
     
+    Vehiculo* v = buscarVehiculoPorID(s, idV);
+    if (v == nullptr) {
+        cout << "\nERROR: No existe ningún vehículo con el ID #" << idV << "." << endl;
+        pausarylimpiar();
+        return;
+    }
+
+    Mecanico* m = buscarMecanicoPorID(s, idM);
+    if (m == nullptr){
+        cout << "\nError: Noexiste ningún mecánico con el ID #" << idM << "." << endl;
+        pausarylimpiar();
+        return;
+    }
+    
+    OrdenServicio* abierta = buscarOrdenAbiertaVehiculo(s, idV);
+    if (abierta != nullptr){
+        cout << "\nError: El vehiculo '" << v->placa << "' ya tiene la orden #" << abierta->id << " ABIERTA." << endl;
+        pausarylimpiar();
+        return;
+    }
+    if (contarOrdenesAbiertasMecanico(s, idM) >= 3) {
+        cout << "\nERROR: El mecánico '" << m->nombre << "' ya tiene 3 órdenes abiertas." << endl;
+        pausarylimpiar();
+        return;
+    }
+    
+    if (km < v->kilometraje){
+        cout << "\nError: El kilometraje de ingreso (" << km << ") es menor al registrado (" << v->kilometraje << " km)." << endl;
+        pausarylimpiar();
+        return;
+    }
+    
+    if (!pedirConfirmacion("\n¿Confirmar la apertura de la orden?")) {
+        cout << "\nApertura cancelada." << endl;
+        cin.ignore(10000, '\n');
+        pausarylimpiar();
+        return;
+    }
+    cin.ignore(10000, '\n');
+
     OrdenServicio* o = abrirOrden(s, idV, idM, fecha, falla, km);
     if (o){
-        cout << "\nOrden #" << o->id << " abierta exitosamente" << endl;
+        cout << "\nOrden #" << o->id << " abierta exitosamente." << endl;
     } else{
-        cout << "\nError: Verifique IDs, limite de 3 ordenes por mecanico o validacion de km." << endl;
+        cout << "\nError: Verifique IDs, formato de fecha, limite de 3 ordenes por mecanico, kilometraje y falla no vacía." << endl;
     }
     pausarylimpiar();
 }
@@ -1542,11 +1743,37 @@ void uiAgregarRepuestoOrden(SistemaTaller* s){
     cout << "ID de la orden: "; cin >> idO;
     cout << "ID del repuesto: "; cin >> idR;
     cout << "Cantidad: "; cin >> cant;
+    cin.ignore(10000, '\n');
+
+    OrdenServicio* o = buscarOrdenPorID(s, idO);
+    if (o == nullptr){
+        cout << "\nERROR: No existe la orden #" << idO << "." << endl;
+        pausarylimpiar();
+        return;
+    }
+    if (!compararCadenasExactas(o->estado, "ABIERTA")){
+        cout << "\nERROR: La orden #" << idO << " esta " << o->estado << " y no puede modificarse." << endl;
+        pausarylimpiar();
+        return;
+    }
+    
+    Repuesto* r = buscarRepuestoPorID(s, idR);
+    if (r == nullptr) {
+        cout << "\nERROR: No existe el repuesto con ID #" << idR << "." << endl;
+        pausarylimpiar();
+        return;
+    }
+    
+    if (r->stock < cant) {
+        cout << "\nERROR: Stock insuficiente de '" << r->nombre << "'. Disponible: " << r->stock << ", solicitado: " << cant << "." << endl;
+        pausarylimpiar();
+        return;
+    }
 
     if (agregarRepuestoAOrden(s, idO, idR,cant)){
-        cout << "\nRepuesto agregado con exito" << endl;
+        cout << "\nRepuesto '" << r->nombre << "agregado con exito a la orden #"  << idO << endl;
     } else{
-        cout << "\nError: Stock insuficiente o la orden no esta aierta." << endl;
+        cout << "\nERROR: Stock insuficiente o la orden no esta aierta." << endl;
         pausarylimpiar();
     }
 }
@@ -1557,7 +1784,14 @@ void uiQuitarRepuestoOrden(SistemaTaller* s){
     int idO, idR;
     cout << "ID de la orden: "; cin >> idO;
     cout << "ID del repuesto: "; cin >> idR;
+    cin.ignore(10000, '\n');
 
+    OrdenServicio* o = buscarOrdenPorID(s, idO);
+    if ( o != nullptr && !compararCadenasExactas(o->estado, "ABIERTA")){
+        cout << "\nERROR: La orden #" << idO << " está " << o->estado << " y no puede modificarse." << endl;
+        pausarylimpiar();
+        return;
+    }
     if (quitarRepuestoDeOrden(s, idO, idR)){
         cout << "Repuesto removido y stock devuelto." << endl;
     } else{
@@ -1574,10 +1808,18 @@ void uiCerrarOrden(SistemaTaller* s){
     cout << "Costo de mano de mano de obra: "; cin >> manoObra;
     cout << "Fecha cierre (YYYY-MM-DD): "; cin >> fecha;
 
+    if (!pedirConfirmacion("\n¿Confirmar el cierre de la orden?")) {
+        cout << "\nCierre cancelado." << endl;
+        cin.ignore(10000, '\n');
+        pausarylimpiar();
+        return;
+    }
+    cin.ignore(10000, '\n');
+    
     if (cerrarOrden(s, idO, manoObra, fecha)) {
-        cout << "Orden cerrada con exito." << endl;
+        cout << "Orden #" << idO << "cerrada con éxito." << endl;
     } else{
-        cout << "Error al cerrar la orden." << endl;
+        cout << "\nERROR: Verifique que la orden esté ABIERTA, tenga detalles o mano de obra > 0, y fecha válida." << endl;
     }
     pausarylimpiar();
 }
@@ -1588,10 +1830,18 @@ void uiAnularOrden(SistemaTaller* s){
     int idO;
     cout << "ID de la orden a anular: "; cin >> idO;
 
+    if (!pedirConfirmacion("\nConfirmar la anulacion de la orden? (Se devolvera el stock al inventario)")){
+        cout << "\nAnulación cancelada." << endl;
+        cin.ignore(10000, '\n');
+        pausarylimpiar();
+        return;
+    }
+    cin.ignore(10000, '\n');
+
     if (anularOrden(s, idO)){
-        cout <<"Orden anulada y stock devuelto al inventario." << endl;
-    } else {
-        cout << "Error al anular." << endl;
+        cout <<"\nOrden #" << idO << " ANULADA y stock devuelto al inventario" << endl;
+    } else{
+        cout << "\nERROR: Orden inexistente o ya anulada." << endl;
     }
     pausarylimpiar();
 }
@@ -1601,10 +1851,11 @@ void uiVerDetalleOrden(SistemaTaller* s){
     cout << "=== VER DETALLE ORDEN ===" << endl;
     int idO;
     cout << "Ingrese el ID de la orden: "; cin >> idO;
-
+    cin.ignore(10000, '\n');
+    
     OrdenServicio* o = buscarOrdenPorID(s, idO);
     if (o == nullptr){
-        cout << "No se encontro ninguna orden con el ID " << idO << "." << endl;
+        cout << "Error: No se encontro ninguna orden con el ID #" << idO << "." << endl;
         pausarylimpiar();
         return;
     }
@@ -1612,54 +1863,44 @@ void uiVerDetalleOrden(SistemaTaller* s){
     Vehiculo* v = buscarVehiculoPorID(s, o->idVehiculo);
     Mecanico* m = buscarMecanicoPorID(s, o->idMecanico);
 
-    cout << "\n============================================================" << endl;
-    cout << "                  ORDEN DE SERVICIO #"<< o->id << "            " << endl;
-    cout << "============================================================" << endl;
-    cout << "Estado: " << o->estado;
-    
-    if (compararCadenasExactas(o->estado, "Cerrada")){
-        cout << "Apertura: " << o->fechaApertura << endl;
-        cout << "Cierre  : " << o->fechaCierre << endl;
-    } else{
-        cout << "Apertura: " << o->fechaApertura << endl;
+    cout << "\n╔════════════════════════════════════════════════════════════════╗" << endl;
+    cout << "║                     ORDEN DE SERVICIO #" << o->id << "                       ║" << endl;
+    cout << "╠════════════════════════════════════════════════════════════════╣" << endl;
+    cout << "║ Estado   : " << o->estado << "          Apertura: " << o->fechaApertura << "          ║" << endl;
+    if (compararCadenasExactas(o->estado, "CERRADA")) {
+        cout << "║ Cierre   : " << o->fechaCierre << "                                          ║" << endl;
     }
-
-    if (v != nullptr){
-        cout << "Vehiculo: " << v->placa << " - " << v->marca << " " << v->modelo << v->anio << " (" << o->kilometrajeIngreso << " km)" << endl;
-        cout << "Dueño   : " << v->nombrePropietario << endl;
+    if (v != nullptr) {
+        cout << "║ Vehículo : " << v->placa << " - " << v->marca << " " << v->modelo << " " << v->anio << " (" << o->kilometrajeIngreso << " km)" << endl;
+        cout << "║ Dueño    : " << v->nombrePropietario << endl;
     }
-    if (m != nullptr){
-        cout << "Mecanico: " << m->nombre << " (" << m->especialidad << ")" << endl;
+    if (m != nullptr) {
+        cout << "║ Mecánico : " << m->nombre << " (" << m->especialidad << ")" << endl;
     }
-    cout << "Falla   : " << o->descripcionFalla << endl;
-    cout << "------------------------------------------------------------" << endl;
-    cout << "Código       Repuesto                      Cant  P.Unit   Total" << endl;
-    cout << "------------------------------------------------------------" << endl;
+    cout << "║ Falla    : " << o->descripcionFalla << endl;
+    cout << "╠══════════╦═══════════════════════════╦══════╦═════════╦════════╣" << endl;
+    cout << "║ Código   ║ Repuesto                  ║ Cant ║ P.Unit  ║ Total  ║" << endl;
+    cout << "╠══════════╬═══════════════════════════╬══════╬═════════╬════════╣" << endl;
 
     float sumaRepuestos = 0.0f;
-    for (int i = 0; i < o->numDetalles; i++){
+    for (int i = 0; i < o->numDetalles; i++) {
         Repuesto* rep = buscarRepuestoPorID(s, o->detalles[i].idRepuesto);
         float subTotalLinea = o->detalles[i].cantidad * o->detalles[i].precioUnitario;
         sumaRepuestos += subTotalLinea;
-        
-        if (rep != nullptr){
-            cout << rep->codigo << "\t" 
-                 << rep->nombre << "\t\t"
-                 << o->detalles[i].cantidad << "\t"
-                 << o->detalles[i].precioUnitario << "\t"
-                 << subTotalLinea << endl;
-        } else{
-            cout << "N/D\tN/D\t\t"
-                 << o->detalles[i].cantidad << "\t"
-                 << o->detalles[i].precioUnitario << "\t"
-                 << subTotalLinea << endl;
+
+        if (rep != nullptr) {
+            cout << "║ " << rep->codigo << "  ║ "
+                 << rep->nombre << " ║  "
+                 << o->detalles[i].cantidad << "   ║  "
+                 << o->detalles[i].precioUnitario << "  ║ "
+                 << subTotalLinea << " ║" << endl;
         }
     }
-    cout << "------------------------------------------------------------" << endl;
-    cout << "                                   Repuestos     " << sumaRepuestos << endl;
-    cout << "                                   Mano de obra  " << o->manoObra << endl;
-    cout << "                                   TOTAL        " << calcularTotalOrden(o) << endl;
-    cout << "============================================================" << endl;
+    cout << "╠══════════╩═══════════════════════════╩══════╩═════════╬════════╣" << endl;
+    cout << "║                                            Repuestos  ║ " << sumaRepuestos << " ║" << endl;
+    cout << "║                                            Mano obra  ║ " << o->manoObra << " ║" << endl;
+    cout << "║                                            TOTAL      ║ " << calcularTotalOrden(o) << " ║" << endl;
+    cout << "╚═══════════════════════════════════════════════════════╩════════╝" << endl;
     pausarylimpiar();
 }
 
@@ -1677,14 +1918,18 @@ void uiListarOrdenes(SistemaTaller *s){
             char estadoBuscado[15];
             cout << "Ingrese el estado (ABIERTA / CERRADA / ANULADA): ";
             cin >> estadoBuscado;
+            cin.ignore(10000, '\n');
             int cantidad = 0;
     
             OrdenServicio** lista = listarOrdenesPorEstado(s, estadoBuscado, &cantidad);
             if (lista != nullptr && cantidad > 0){
                 cout << "\n--- ORDENES CON ESTADO: " << estadoBuscado << " (" << cantidad << ") ---" << endl;
                 for (int i = 0; i < cantidad; i++){
-                    cout << "ID Orden: " << lista[i]->id << " | Vehiculo ID: " << lista[i]->idVehiculo
-                         << " | Apertura: " << lista[i]->fechaApertura << " | Total: $" << calcularTotalOrden(lista[i]) << endl;
+                    Vehiculo* v = buscarVehiculoPorID(s, lista[i]->idVehiculo); 
+                    cout << "Orden #" << lista[i]->id << " | Vehiculo: #" << lista[i]->idVehiculo
+                         << " (" << (v ? v->placa : "N/D") << ")"
+                         << " | Apertura: " << lista[i]->fechaApertura
+                         << " | Total: $" << calcularTotalOrden(lista[i]) << endl;
                 }
                 delete[] lista;
             } else{
@@ -1695,22 +1940,25 @@ void uiListarOrdenes(SistemaTaller *s){
             int idV;
             cout << "Ingrese el ID del vehiculo: ";
             cin >> idV;
+            cin.ignore(10000, '\n');
             int cantidad = 0;
 
             OrdenServicio** lista = listarOrdenesPorVehiculo(s, idV, &cantidad);
             if (lista != nullptr && cantidad > 0){
                 cout << "\n--- HISTORIAL DE ÓRDENES DEL VEHÍCULO ID " << idV << " (" << cantidad << ") ---" << endl;
                 for (int i = 0; i < cantidad; i++) {
-                    cout << "ID Orden: " << lista[i]->id << " | Estado: " << lista[i]->estado 
-                         << " | Apertura: " << lista[i]->fechaApertura << " | Total: $" << calcularTotalOrden(lista[i]) << endl;
+                    cout << "Orden #" << lista[i]->id << " | Estado: " << lista[i]->estado
+                         << " | Apertura: " << lista[i]->fechaApertura
+                         << " | Total: $" << calcularTotalOrden(lista[i]) << endl;
                 }
                 delete[] lista;
             } else{
-                cout << "\nBad milk. No hay ordenes registradas para ese vehiculo." << endl;
+                cout << "\nNo hay ordenes registradas para ese vehiculo." << endl;
             }
             break;
         }default:{
-            cout << "\nOpcion validan't." << endl;
+            cin.ignore(10000, '\n');
+            cout << "\nOpcion inválida." << endl;
             break;
         }
     } 
@@ -1884,25 +2132,7 @@ int main () {
         }
     } while (opcion != 0);
 
-    // 1. Liberar primero el arreglo de detalles de cada orden
-    for (int i = 0; i < miTaller.numOrdenes; i++) {
-        if (miTaller.ordenes[i].detalles != nullptr) {
-            delete[] miTaller.ordenes[i].detalles;
-            miTaller.ordenes[i].detalles = nullptr;
-        }
-    }
-
-    // Liberar la memoria dinamica anidada primero (detalles de cada orden)
-    for (int i = 0; i < miTaller.numOrdenes; i++) {
-        delete[] miTaller.ordenes[i].detalles;
-    }
-
-    delete[] miTaller.vehiculos;
-    delete[] miTaller.mecanicos;
-    delete[] miTaller.repuestos;
-    for (int i = 0; i < miTaller.numOrdenes; i++){
-        delete[] miTaller.ordenes[i].detalles;
-    }
+liberarSistema(&miTaller);
 //miau
 return 0;
 }
