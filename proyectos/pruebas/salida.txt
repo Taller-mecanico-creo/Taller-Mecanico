@@ -1,0 +1,1294 @@
+╔═══════════════════════════════════════════╗
+║    SISTEMA DE GESTIÓN DE TALLER           ║
+║    Taller: Autoservicio El Wikiti         ║
+╠═══════════════════════════════════════════╣
+║ 1. Gestión de Vehículos                   ║
+║ 2. Gestión de Mecánicos                   ║
+║ 3. Inventario de Repuestos                ║
+║ 4. Órdenes de Servicio                    ║
+║ 0. Salir                                  ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === REGISTRAR NUEVO VEHICULO ===
+(Escriba CANCELAR para abortar).
+Placa: Marca: Modelo: Año (1950-2027): Kilometraje (>= 0): Nombre del Propietario: Cedula del Propietario: Telefono del Propietario: Fecha de Registro (YYYY-MM-DD): 
+¿Confirmar el registro del vehículo? (S/N): 
+Vehiculo 'AB123CD' registrado exitosamente con ID #1.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === REGISTRAR NUEVO VEHICULO ===
+(Escriba CANCELAR para abortar).
+Placa: Marca: Modelo: Año (1950-2027): Kilometraje (>= 0): Nombre del Propietario: Cedula del Propietario: Telefono del Propietario: Fecha de Registro (YYYY-MM-DD): 
+¿Confirmar el registro del vehículo? (S/N): 
+Registro cancelado.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === REGISTRAR NUEVO VEHICULO ===
+(Escriba CANCELAR para abortar).
+Placa: Marca: Modelo: Año (1950-2027): Kilometraje (>= 0): Nombre del Propietario: Cedula del Propietario: Telefono del Propietario: Fecha de Registro (YYYY-MM-DD): 
+¿Confirmar el registro del vehículo? (S/N): 
+Vehiculo 'EF456GH' registrado exitosamente con ID #2.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === BUSCAR VEHICULO ===
+Seleccione el modo de busqueda: 
+1. Buscar por ID
+2. Buscar por Placa
+3. Buscar por Propietario
+Ingrese parte del nombre del propietario: 
+=== LISTADO DE VEHICULOS (1) ===
+----------------------------------------
+ ID          : 1
+ Placa       : AB123CD
+ Marca/Modelo: Toyota Corolla (2015)
+ Kilometraje : 45000 km
+ Propietario : Maria Gonzalez(CI:V-12345678)
+ Telefono    : 04141112233
+ Registro    : 2026-10-12
+----------------------------------------
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === BUSCAR VEHICULO ===
+Seleccione el modo de busqueda: 
+1. Buscar por ID
+2. Buscar por Placa
+3. Buscar por Propietario
+Ingrese la placa exacta: 
+Error: No se encontro ningun vehiculo con la placa 'XY987ZW'.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: 
+=== LISTADO DE VEHICULOS (2) ===
+----------------------------------------
+ ID          : 1
+ Placa       : AB123CD
+ Marca/Modelo: Toyota Corolla (2015)
+ Kilometraje : 45000 km
+ Propietario : Maria Gonzalez(CI:V-12345678)
+ Telefono    : 04141112233
+ Registro    : 2026-10-12
+----------------------------------------
+ ID          : 2
+ Placa       : EF456GH
+ Marca/Modelo: Ford Fiesta (2012)
+ Kilometraje : 85000 km
+ Propietario : Carlos Perez(CI:V-87654321)
+ Telefono    : 04122223344
+ Registro    : 2026-10-12
+----------------------------------------
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║    SISTEMA DE GESTIÓN DE TALLER           ║
+║    Taller: Autoservicio El Wikiti         ║
+╠═══════════════════════════════════════════╣
+║ 1. Gestión de Vehículos                   ║
+║ 2. Gestión de Mecánicos                   ║
+║ 3. Inventario de Repuestos                ║
+║ 4. Órdenes de Servicio                    ║
+║ 0. Salir                                  ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === REGISTRAR NUEVO REPUESTO ===
+Código (único, sin espacios, ej. FRN-001): Nombre del repuesto: Marca: Precio unitario (>0): Stock inicial (>= 0): Stock mínimo para alerta (>= 0): Fecha de registro (YYYY-MM-DD): 
+Repuesto 'Pastillas delanteras' registrado exitosamente con ID #1
+╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === REGISTRAR NUEVO REPUESTO ===
+Código (único, sin espacios, ej. FRN-001): Nombre del repuesto: Marca: Precio unitario (>0): Stock inicial (>= 0): Stock mínimo para alerta (>= 0): Fecha de registro (YYYY-MM-DD): 
+Repuesto 'Filtro de aceite' registrado exitosamente con ID #2
+╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === REGISTRAR NUEVO REPUESTO ===
+Código (único, sin espacios, ej. FRN-001): Nombre del repuesto: Marca: Precio unitario (>0): Stock inicial (>= 0): Stock mínimo para alerta (>= 0): Fecha de registro (YYYY-MM-DD): 
+Repuesto 'Bujias' registrado exitosamente con ID #3
+╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === REGISTRAR NUEVO REPUESTO ===
+Código (único, sin espacios, ej. FRN-001): Nombre del repuesto: Marca: Precio unitario (>0): Stock inicial (>= 0): Stock mínimo para alerta (>= 0): Fecha de registro (YYYY-MM-DD): 
+Repuesto 'Amortiguador' registrado exitosamente con ID #4
+╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: 
+=== LISTADO DE REPUESTOS (4) ===
+----------------------------------------
+ ID           : 1
+ Código       : FRN-001
+ Nombre       : Pastillas delanteras
+ Marca        : Toyota
+ Precio Unit. : $25
+ Stock Actual : 5 (Mínimo: 5) <-- [ALERTA: BAJO STOCK]
+ Registro     : 2026-10-12
+----------------------------------------
+ ID           : 2
+ Código       : ACE-002
+ Nombre       : Filtro de aceite
+ Marca        : Ford
+ Precio Unit. : $10
+ Stock Actual : 10 (Mínimo: 2)
+ Registro     : 2026-10-12
+----------------------------------------
+ ID           : 3
+ Código       : ACE-003
+ Nombre       : Bujias
+ Marca        : Bosch
+ Precio Unit. : $15
+ Stock Actual : 8 (Mínimo: 2)
+ Registro     : 2026-10-12
+----------------------------------------
+ ID           : 4
+ Código       : BIE-004
+ Nombre       : Amortiguador
+ Marca        : Monroe
+ Precio Unit. : $45
+ Stock Actual : 4 (Mínimo: 2)
+ Registro     : 2026-10-12
+----------------------------------------
+Total de repuestos mostrados: 4
+╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === REGISTRAR ENTRADA DE MERCANCÍA ===
+Ingrese el ID del repuesto: Repuesto seleccionado: Pastillas delanteras (Stock actual: 5)
+Ingrese la cantidad de unidades que ingresan (> 0): 
+¡Entrada registrada! Nuevo stock de 'Pastillas delanteras': 10unidades.
+╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: 
+=== LISTADO DE REPUESTOS (4) ===
+----------------------------------------
+ ID           : 1
+ Código       : FRN-001
+ Nombre       : Pastillas delanteras
+ Marca        : Toyota
+ Precio Unit. : $25
+ Stock Actual : 10 (Mínimo: 5)
+ Registro     : 2026-10-12
+----------------------------------------
+ ID           : 2
+ Código       : ACE-002
+ Nombre       : Filtro de aceite
+ Marca        : Ford
+ Precio Unit. : $10
+ Stock Actual : 10 (Mínimo: 2)
+ Registro     : 2026-10-12
+----------------------------------------
+ ID           : 3
+ Código       : ACE-003
+ Nombre       : Bujias
+ Marca        : Bosch
+ Precio Unit. : $15
+ Stock Actual : 8 (Mínimo: 2)
+ Registro     : 2026-10-12
+----------------------------------------
+ ID           : 4
+ Código       : BIE-004
+ Nombre       : Amortiguador
+ Marca        : Monroe
+ Precio Unit. : $45
+ Stock Actual : 4 (Mínimo: 2)
+ Registro     : 2026-10-12
+----------------------------------------
+Total de repuestos mostrados: 4
+╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║    SISTEMA DE GESTIÓN DE TALLER           ║
+║    Taller: Autoservicio El Wikiti         ║
+╠═══════════════════════════════════════════╣
+║ 1. Gestión de Vehículos                   ║
+║ 2. Gestión de Mecánicos                   ║
+║ 3. Inventario de Repuestos                ║
+║ 4. Órdenes de Servicio                    ║
+║ 0. Salir                                  ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║            GESTIÓN DE MECÁNICOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar mecánico                     ║
+║ 2. Buscar por ID                          ║
+║ 3. Listar todos los mecánicos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === REGISTRAR NUEVO MECANICO ===
+Nombre del Mecanico: Cedula: Especialidad (MOTOR, FRENOS, ELECTRICIDAD, SUSPENSION, GENERAL): Fecha de Ingreso (YYYY-MM-DD): 
+Mecanico registrado exitosamente con ID asignado!
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE MECÁNICOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar mecánico                     ║
+║ 2. Buscar por ID                          ║
+║ 3. Listar todos los mecánicos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║    SISTEMA DE GESTIÓN DE TALLER           ║
+║    Taller: Autoservicio El Wikiti         ║
+╠═══════════════════════════════════════════╣
+║ 1. Gestión de Vehículos                   ║
+║ 2. Gestión de Mecánicos                   ║
+║ 3. Inventario de Repuestos                ║
+║ 4. Órdenes de Servicio                    ║
+║ 0. Salir                                  ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║            ÓRDENES DE SERVICIO            ║
+╠═══════════════════════════════════════════╣
+║ 1. Abrir orden                            ║
+║ 2. Agregar repuesto a orden               ║
+║ 3. Quitar repuesto de orden               ║
+║ 4. Cerrar orden                           ║
+║ 5. Anular orden                           ║
+║ 6. Ver detalle de orden                   ║
+║ 7. Listar órdenes                         ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === ABRIR ORDEN DE SERVICIO ===
+ID del vehiculo: ID del mecanico: Kilometraje de ingreso: Fecha (YYY-MM-DD): Descripcion de la falla: 
+¿Confirmar la apertura de la orden? (S/N): 
+Orden #1 abierta exitosamente.
+╔═══════════════════════════════════════════╗
+║            ÓRDENES DE SERVICIO            ║
+╠═══════════════════════════════════════════╣
+║ 1. Abrir orden                            ║
+║ 2. Agregar repuesto a orden               ║
+║ 3. Quitar repuesto de orden               ║
+║ 4. Cerrar orden                           ║
+║ 5. Anular orden                           ║
+║ 6. Ver detalle de orden                   ║
+║ 7. Listar órdenes                         ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === AGREGRAR REPUESTO A ORDEN ===
+ID de la orden: ID del repuesto: Cantidad: 
+Repuesto 'Pastillas delanterasagregado con exito a la orden #1
+╔═══════════════════════════════════════════╗
+║            ÓRDENES DE SERVICIO            ║
+╠═══════════════════════════════════════════╣
+║ 1. Abrir orden                            ║
+║ 2. Agregar repuesto a orden               ║
+║ 3. Quitar repuesto de orden               ║
+║ 4. Cerrar orden                           ║
+║ 5. Anular orden                           ║
+║ 6. Ver detalle de orden                   ║
+║ 7. Listar órdenes                         ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === AGREGRAR REPUESTO A ORDEN ===
+ID de la orden: ID del repuesto: Cantidad: 
+Repuesto 'Filtro de aceiteagregado con exito a la orden #1
+╔═══════════════════════════════════════════╗
+║            ÓRDENES DE SERVICIO            ║
+╠═══════════════════════════════════════════╣
+║ 1. Abrir orden                            ║
+║ 2. Agregar repuesto a orden               ║
+║ 3. Quitar repuesto de orden               ║
+║ 4. Cerrar orden                           ║
+║ 5. Anular orden                           ║
+║ 6. Ver detalle de orden                   ║
+║ 7. Listar órdenes                         ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === AGREGRAR REPUESTO A ORDEN ===
+ID de la orden: ID del repuesto: Cantidad: 
+Repuesto 'Pastillas delanterasagregado con exito a la orden #1
+╔═══════════════════════════════════════════╗
+║            ÓRDENES DE SERVICIO            ║
+╠═══════════════════════════════════════════╣
+║ 1. Abrir orden                            ║
+║ 2. Agregar repuesto a orden               ║
+║ 3. Quitar repuesto de orden               ║
+║ 4. Cerrar orden                           ║
+║ 5. Anular orden                           ║
+║ 6. Ver detalle de orden                   ║
+║ 7. Listar órdenes                         ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === QUITAR REPUESTO DE ORDEN ===
+ID de la orden: ID del repuesto: Repuesto removido y stock devuelto.
+╔═══════════════════════════════════════════╗
+║            ÓRDENES DE SERVICIO            ║
+╠═══════════════════════════════════════════╣
+║ 1. Abrir orden                            ║
+║ 2. Agregar repuesto a orden               ║
+║ 3. Quitar repuesto de orden               ║
+║ 4. Cerrar orden                           ║
+║ 5. Anular orden                           ║
+║ 6. Ver detalle de orden                   ║
+║ 7. Listar órdenes                         ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === CERRAR ORDEN ===
+ID de la orden: Costo de mano de mano de obra: Fecha cierre (YYYY-MM-DD): 
+¿Confirmar el cierre de la orden? (S/N): Orden #1cerrada con éxito.
+╔═══════════════════════════════════════════╗
+║            ÓRDENES DE SERVICIO            ║
+╠═══════════════════════════════════════════╣
+║ 1. Abrir orden                            ║
+║ 2. Agregar repuesto a orden               ║
+║ 3. Quitar repuesto de orden               ║
+║ 4. Cerrar orden                           ║
+║ 5. Anular orden                           ║
+║ 6. Ver detalle de orden                   ║
+║ 7. Listar órdenes                         ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === VER DETALLE ORDEN ===
+Ingrese el ID de la orden: 
+╔════════════════════════════════════════════════════════════════╗
+║                     ORDEN DE SERVICIO #1                       ║
+╠════════════════════════════════════════════════════════════════╣
+║ Estado   : CERRADA          Apertura: 2026-10-12          ║
+║ Cierre   : 2026-10-14                                          ║
+║ Vehículo : AB123CD - Toyota Corolla 2015 (45000 km)
+║ Dueño    : Maria Gonzalez
+║ Mecánico : Juan Perez (FRENOS)
+║ Falla    : Ruido al frenar
+╠══════════╦═══════════════════════════╦══════╦═════════╦════════╣
+║ Código   ║ Repuesto                  ║ Cant ║ P.Unit  ║ Total  ║
+╠══════════╬═══════════════════════════╬══════╬═════════╬════════╣
+║ ACE-002  ║ Filtro de aceite ║  1   ║  10  ║ 10 ║
+╠══════════╩═══════════════════════════╩══════╩═════════╬════════╣
+║                                            Repuestos  ║ 10 ║
+║                                            Mano obra  ║ 40 ║
+║                                            TOTAL      ║ 50 ║
+╚═══════════════════════════════════════════════════════╩════════╝
+╔═══════════════════════════════════════════╗
+║            ÓRDENES DE SERVICIO            ║
+╠═══════════════════════════════════════════╣
+║ 1. Abrir orden                            ║
+║ 2. Agregar repuesto a orden               ║
+║ 3. Quitar repuesto de orden               ║
+║ 4. Cerrar orden                           ║
+║ 5. Anular orden                           ║
+║ 6. Ver detalle de orden                   ║
+║ 7. Listar órdenes                         ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║    SISTEMA DE GESTIÓN DE TALLER           ║
+║    Taller: Autoservicio El Wikiti         ║
+╠═══════════════════════════════════════════╣
+║ 1. Gestión de Vehículos                   ║
+║ 2. Gestión de Mecánicos                   ║
+║ 3. Inventario de Repuestos                ║
+║ 4. Órdenes de Servicio                    ║
+║ 0. Salir                                  ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === CAMBIAR PRECIO DE REPUESTO ===
+Ingrese el ID del repuesto: Repuesto: Pastillas delanteras | Precio actual: $25.
+Ingrese el nuevo precio unitario (> 0): 
+Precio actualizado exitosamente a $35.
+(Nota: Las órdenes registradas previamente mantienen su precio histórico).
+╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: 
+=== LISTADO DE REPUESTOS (4) ===
+----------------------------------------
+ ID           : 1
+ Código       : FRN-001
+ Nombre       : Pastillas delanteras
+ Marca        : Toyota
+ Precio Unit. : $35
+ Stock Actual : 10 (Mínimo: 5)
+ Registro     : 2026-10-12
+----------------------------------------
+ ID           : 2
+ Código       : ACE-002
+ Nombre       : Filtro de aceite
+ Marca        : Ford
+ Precio Unit. : $10
+ Stock Actual : 9 (Mínimo: 2)
+ Registro     : 2026-10-12
+----------------------------------------
+ ID           : 3
+ Código       : ACE-003
+ Nombre       : Bujias
+ Marca        : Bosch
+ Precio Unit. : $15
+ Stock Actual : 8 (Mínimo: 2)
+ Registro     : 2026-10-12
+----------------------------------------
+ ID           : 4
+ Código       : BIE-004
+ Nombre       : Amortiguador
+ Marca        : Monroe
+ Precio Unit. : $45
+ Stock Actual : 4 (Mínimo: 2)
+ Registro     : 2026-10-12
+----------------------------------------
+Total de repuestos mostrados: 4
+╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === ELIMINAR REPUESTO ===
+Ingrese el ID del repuesto a eliminar: 
+Repuesto eliminado del inventario.
+╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === REGISTRAR NUEVO REPUESTO ===
+Código (único, sin espacios, ej. FRN-001): Nombre del repuesto: Marca: Precio unitario (>0): Stock inicial (>= 0): Stock mínimo para alerta (>= 0): Fecha de registro (YYYY-MM-DD): 
+ERROR: No se pudo registrar el repuesto (verifique precio, stock y campos no vacíos).
+╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === BUSCAR REPUESTO ===
+Seleccione el modo de búsqueda:
+1. Buscar por ID
+2. Buscar por Código exacto
+3. Buscar por Nombre parcial
+Opción: 
+Opción de búsqueda inválida.
+╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: 
+=== LISTADO DE REPUESTOS (3) ===
+----------------------------------------
+ ID           : 2
+ Código       : ACE-002
+ Nombre       : Filtro de aceite
+ Marca        : Ford
+ Precio Unit. : $10
+ Stock Actual : 9 (Mínimo: 2)
+ Registro     : 2026-10-12
+----------------------------------------
+ ID           : 3
+ Código       : ACE-003
+ Nombre       : Bujias
+ Marca        : Bosch
+ Precio Unit. : $15
+ Stock Actual : 8 (Mínimo: 2)
+ Registro     : 2026-10-12
+----------------------------------------
+ ID           : 4
+ Código       : BIE-004
+ Nombre       : Amortiguador
+ Marca        : Monroe
+ Precio Unit. : $45
+ Stock Actual : 4 (Mínimo: 2)
+ Registro     : 2026-10-12
+----------------------------------------
+Total de repuestos mostrados: 3
+╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === CAMBIAR PRECIO DE REPUESTO ===
+Ingrese el ID del repuesto: Repuesto: Filtro de aceite | Precio actual: $10.
+Ingrese el nuevo precio unitario (> 0): ╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║    SISTEMA DE GESTIÓN DE TALLER           ║
+║    Taller: Autoservicio El Wikiti         ║
+╠═══════════════════════════════════════════╣
+║ 1. Gestión de Vehículos                   ║
+║ 2. Gestión de Mecánicos                   ║
+║ 3. Inventario de Repuestos                ║
+║ 4. Órdenes de Servicio                    ║
+║ 0. Salir                                  ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: 
+=== LISTADO DE REPUESTOS (3) ===
+----------------------------------------
+ ID           : 2
+ Código       : ACE-002
+ Nombre       : Filtro de aceite
+ Marca        : Ford
+ Precio Unit. : $10
+ Stock Actual : 9 (Mínimo: 2)
+ Registro     : 2026-10-12
+----------------------------------------
+ ID           : 3
+ Código       : ACE-003
+ Nombre       : Bujias
+ Marca        : Bosch
+ Precio Unit. : $15
+ Stock Actual : 8 (Mínimo: 2)
+ Registro     : 2026-10-12
+----------------------------------------
+ ID           : 4
+ Código       : BIE-004
+ Nombre       : Amortiguador
+ Marca        : Monroe
+ Precio Unit. : $45
+ Stock Actual : 4 (Mínimo: 2)
+ Registro     : 2026-10-12
+----------------------------------------
+Total de repuestos mostrados: 3
+╔═══════════════════════════════════════════╗
+║          INVENTARIO DE REPUESTOS          ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar repuesto                     ║
+║ 2. Buscar repuesto (ID / Código / Nombre) ║
+║ 3. Registrar entrada de mercancía         ║
+║ 4. Listar todos los repuestos             ║
+║ 5. Cambiar precio                         ║
+║ 6. Eliminar repuesto                      ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║    SISTEMA DE GESTIÓN DE TALLER           ║
+║    Taller: Autoservicio El Wikiti         ║
+╠═══════════════════════════════════════════╣
+║ 1. Gestión de Vehículos                   ║
+║ 2. Gestión de Mecánicos                   ║
+║ 3. Inventario de Repuestos                ║
+║ 4. Órdenes de Servicio                    ║
+║ 0. Salir                                  ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === REGISTRAR NUEVO VEHICULO ===
+(Escriba CANCELAR para abortar).
+Placa: Marca: Modelo: Año (1950-2027): Kilometraje (>= 0): Nombre del Propietario: Cedula del Propietario: Telefono del Propietario: Fecha de Registro (YYYY-MM-DD): 
+ERROR: La placa 'AB123CD' ya está registrada.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === REGISTRAR NUEVO VEHICULO ===
+(Escriba CANCELAR para abortar).
+Placa: Marca: Modelo: Año (1950-2027): Kilometraje (>= 0): Nombre del Propietario: Cedula del Propietario: Telefono del Propietario: Fecha de Registro (YYYY-MM-DD): 
+¿Confirmar el registro del vehículo? (S/N): 
+Registro cancelado.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === REGISTRAR NUEVO VEHICULO ===
+(Escriba CANCELAR para abortar).
+Placa: Marca: Modelo: Año (1950-2027): Kilometraje (>= 0): Nombre del Propietario: Cedula del Propietario: Telefono del Propietario: Fecha de Registro (YYYY-MM-DD): 
+¿Confirmar el registro del vehículo? (S/N): 
+Registro cancelado.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === ELIMINAR VEHICULO ===
+Ingrese la ID del Vehiculo a eliminar: 
+No se pudo eliminar (ID no existe o el vehiculo tiene ordenes de servicio asociadas).
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === ACTUALIZAR VEHICULO ===
+Ingrese el ID del vehiculo a actualizar: 
+Error: No existe un vehiculo registrado con el ID 40.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === ACTUALIZAR VEHICULO ===
+Ingrese el ID del vehiculo a actualizar: 
+Vehiculo actual encontrado: 
+----------------------------------------
+ ID          : 1
+ Placa       : AB123CD
+ Marca/Modelo: Toyota Corolla (2015)
+ Kilometraje : 45000 km
+ Propietario : Maria Gonzalez(CI:V-12345678)
+ Telefono    : 04141112233
+ Registro    : 2026-10-12
+
+Ingrese los nuevos datos (Placa y kilometraje no se modifican): 
+Nueva Marca: Nuevo Modelo: Nuevo anio (1950 - 2027): Nuevo Nombre del Propietario: Nueva Cédula del Propietario: Nuevo Teléfono del Propietario: 
+Confirmar la actualizacion del vehiculo? (S/N): 
+Actualización cancelada.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === REGISTRAR NUEVO VEHICULO ===
+(Escriba CANCELAR para abortar).
+Placa: Marca: Modelo: Año (1950-2027): Kilometraje (>= 0): Nombre del Propietario: Cedula del Propietario: Telefono del Propietario: Fecha de Registro (YYYY-MM-DD): 
+¿Confirmar el registro del vehículo? (S/N): 
+Registro cancelado.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Opcion invalida.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║    SISTEMA DE GESTIÓN DE TALLER           ║
+║    Taller: Autoservicio El Wikiti         ║
+╠═══════════════════════════════════════════╣
+║ 1. Gestión de Vehículos                   ║
+║ 2. Gestión de Mecánicos                   ║
+║ 3. Inventario de Repuestos                ║
+║ 4. Órdenes de Servicio                    ║
+║ 0. Salir                                  ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║            ÓRDENES DE SERVICIO            ║
+╠═══════════════════════════════════════════╣
+║ 1. Abrir orden                            ║
+║ 2. Agregar repuesto a orden               ║
+║ 3. Quitar repuesto de orden               ║
+║ 4. Cerrar orden                           ║
+║ 5. Anular orden                           ║
+║ 6. Ver detalle de orden                   ║
+║ 7. Listar órdenes                         ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === ABRIR ORDEN DE SERVICIO ===
+ID del vehiculo: ID del mecanico: Kilometraje de ingreso: Fecha (YYY-MM-DD): Descripcion de la falla: 
+¿Confirmar la apertura de la orden? (S/N): 
+Orden #2 abierta exitosamente.
+╔═══════════════════════════════════════════╗
+║            ÓRDENES DE SERVICIO            ║
+╠═══════════════════════════════════════════╣
+║ 1. Abrir orden                            ║
+║ 2. Agregar repuesto a orden               ║
+║ 3. Quitar repuesto de orden               ║
+║ 4. Cerrar orden                           ║
+║ 5. Anular orden                           ║
+║ 6. Ver detalle de orden                   ║
+║ 7. Listar órdenes                         ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === AGREGRAR REPUESTO A ORDEN ===
+ID de la orden: ID del repuesto: Cantidad: 
+ERROR: La orden #1 esta CERRADA y no puede modificarse.
+╔═══════════════════════════════════════════╗
+║            ÓRDENES DE SERVICIO            ║
+╠═══════════════════════════════════════════╣
+║ 1. Abrir orden                            ║
+║ 2. Agregar repuesto a orden               ║
+║ 3. Quitar repuesto de orden               ║
+║ 4. Cerrar orden                           ║
+║ 5. Anular orden                           ║
+║ 6. Ver detalle de orden                   ║
+║ 7. Listar órdenes                         ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === AGREGRAR REPUESTO A ORDEN ===
+ID de la orden: ID del repuesto: Cantidad: 
+ERROR: La orden #1 esta CERRADA y no puede modificarse.
+╔═══════════════════════════════════════════╗
+║            ÓRDENES DE SERVICIO            ║
+╠═══════════════════════════════════════════╣
+║ 1. Abrir orden                            ║
+║ 2. Agregar repuesto a orden               ║
+║ 3. Quitar repuesto de orden               ║
+║ 4. Cerrar orden                           ║
+║ 5. Anular orden                           ║
+║ 6. Ver detalle de orden                   ║
+║ 7. Listar órdenes                         ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === AGREGRAR REPUESTO A ORDEN ===
+ID de la orden: ID del repuesto: Cantidad: 
+ERROR: La orden #1 esta CERRADA y no puede modificarse.
+╔═══════════════════════════════════════════╗
+║            ÓRDENES DE SERVICIO            ║
+╠═══════════════════════════════════════════╣
+║ 1. Abrir orden                            ║
+║ 2. Agregar repuesto a orden               ║
+║ 3. Quitar repuesto de orden               ║
+║ 4. Cerrar orden                           ║
+║ 5. Anular orden                           ║
+║ 6. Ver detalle de orden                   ║
+║ 7. Listar órdenes                         ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === VER DETALLE ORDEN ===
+Ingrese el ID de la orden: 
+╔════════════════════════════════════════════════════════════════╗
+║                     ORDEN DE SERVICIO #2                       ║
+╠════════════════════════════════════════════════════════════════╣
+║ Estado   : ABIERTA          Apertura: 2026-10-12          ║
+║ Vehículo : AB123CD - Toyota Corolla 2015 (45000 km)
+║ Dueño    : Maria Gonzalez
+║ Mecánico : Juan Perez (FRENOS)
+║ Falla    : Redim
+╠══════════╦═══════════════════════════╦══════╦═════════╦════════╣
+║ Código   ║ Repuesto                  ║ Cant ║ P.Unit  ║ Total  ║
+╠══════════╬═══════════════════════════╬══════╬═════════╬════════╣
+╠══════════╩═══════════════════════════╩══════╩═════════╬════════╣
+║                                            Repuestos  ║ 0 ║
+║                                            Mano obra  ║ 0 ║
+║                                            TOTAL      ║ 0 ║
+╚═══════════════════════════════════════════════════════╩════════╝
+╔═══════════════════════════════════════════╗
+║            ÓRDENES DE SERVICIO            ║
+╠═══════════════════════════════════════════╣
+║ 1. Abrir orden                            ║
+║ 2. Agregar repuesto a orden               ║
+║ 3. Quitar repuesto de orden               ║
+║ 4. Cerrar orden                           ║
+║ 5. Anular orden                           ║
+║ 6. Ver detalle de orden                   ║
+║ 7. Listar órdenes                         ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║    SISTEMA DE GESTIÓN DE TALLER           ║
+║    Taller: Autoservicio El Wikiti         ║
+╠═══════════════════════════════════════════╣
+║ 1. Gestión de Vehículos                   ║
+║ 2. Gestión de Mecánicos                   ║
+║ 3. Inventario de Repuestos                ║
+║ 4. Órdenes de Servicio                    ║
+║ 0. Salir                                  ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: === REGISTRAR NUEVO VEHICULO ===
+(Escriba CANCELAR para abortar).
+Placa: Marca: 
+Registro cancelado por el usuario.
+╔═══════════════════════════════════════════╗
+║            GESTIÓN DE VEHÍCULOS           ║
+╠═══════════════════════════════════════════╣
+║ 1. Registrar vehículo                     ║
+║ 2. Buscar vehículo                        ║
+║ 3. Actualizar vehículo                    ║
+║ 4. Eliminar vehículo                      ║
+║ 5. Listar vehículos                       ║
+║ 6. Mostrar vehículos                      ║
+║ 7. Mostrar lista de vehículos             ║
+║ 0. Volver al menú principal               ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: ╔═══════════════════════════════════════════╗
+║    SISTEMA DE GESTIÓN DE TALLER           ║
+║    Taller: Autoservicio El Wikiti         ║
+╠═══════════════════════════════════════════╣
+║ 1. Gestión de Vehículos                   ║
+║ 2. Gestión de Mecánicos                   ║
+║ 3. Inventario de Repuestos                ║
+║ 4. Órdenes de Servicio                    ║
+║ 0. Salir                                  ║
+╚═══════════════════════════════════════════╝
+Seleccione una opcion: Cerrando programa. Hasta pronto...
