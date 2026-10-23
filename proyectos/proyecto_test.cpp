@@ -1027,6 +1027,7 @@ void uiRegistrarVehiculo(SistemaTaller* s){
     } else {
         cout << "\nERROR: No se pudo registrar el vehiculo." << endl;
     }
+    cin.ignore(10000, '\n');
     pausarylimpiar();
 }
 
@@ -1088,6 +1089,7 @@ void uiBuscarVehiculo(SistemaTaller* s) {
             break;
         }
     } 
+    cin.ignore(10000, '\n');
     pausarylimpiar();
 }
 
@@ -1101,6 +1103,7 @@ void uiActualizarVehiculos(SistemaTaller* s){
     Vehiculo* v = buscarVehiculoPorID(s, id);
     if (v == nullptr){
         cout << "\nMi loco no existe un vehiculo registrado con el ID " << id << "." << endl;
+        cin.ignore(10000, '\n');
         pausarylimpiar();
         return;
     }
@@ -1124,7 +1127,9 @@ void uiActualizarVehiculos(SistemaTaller* s){
     } else{
         cout << "\nError al actualizar (verifique el anio)." << endl;
     }
+    cin.ignore(10000, '\n');
     pausarylimpiar();
+    
 }
 
 void uiEliminarVehiculo(SistemaTaller* s){
@@ -1139,6 +1144,7 @@ void uiEliminarVehiculo(SistemaTaller* s){
     } else{
         cout << "\nNo se pudo eliminar (ID no existe o el vehiculo tiene ordenes de servicio asociadas)." << endl;
     }
+    cin.ignore(10000, '\n');
     pausarylimpiar();
 }
 
@@ -1153,10 +1159,12 @@ void uiListarVehiculos(SistemaTaller* s){
     } else {
         cout << "\nNo hay vehiculos registrados en el sistema." << endl;
     }
+    cin.ignore(10000, '\n');
+    pausarylimpiar();
 }
 
 void menuMecánicos () {
-    cout << "╔═══════════════════════════════════════════╗" << endl;
+    cout << "╔════════════════════════════════════════g═══╗" << endl;
     cout << "║            GESTIÓN DE MECÁNICOS           ║" << endl;
     cout << "╠═══════════════════════════════════════════╣" << endl;
     cout << "║ 1. Registrar mecánico                     ║" << endl;
@@ -1184,6 +1192,7 @@ void uiRegistrarMecanico(SistemaTaller* s){
     } else {
         cout << "\nERROR: No se pudo registrar el mecanico." << endl;
     }
+    cin.ignore(10000, '\n');
     pausarylimpiar();
 }
 
@@ -1233,6 +1242,7 @@ void uiListarMecanicos(SistemaTaller* s){
     } else{
         cout << "\nNo hay mecanicos registrados." << endl;
     }
+    cin.ignore(10000, '\n');
     pausarylimpiar();
 }
 
