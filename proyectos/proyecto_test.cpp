@@ -1903,6 +1903,6 @@ int main () {
     for (int i = 0; i < miTaller.numOrdenes; i++){
         delete[] miTaller.ordenes[i].detalles;
     }
-
+//miau
 return 0;
 }
