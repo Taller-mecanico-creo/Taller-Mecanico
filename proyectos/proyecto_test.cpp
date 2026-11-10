@@ -1,13 +1,62 @@
 #include <iostream>
+#include <fstream> 
+#include <ctime>
 #include <windows.h>
+#include <direct.h> // mkdir en Windows
 using namespace std;
 
-//structs
+// const y rutas
+
+const int MAX_DETALLES_ORDEN = 15; // Mínimo 15 líneas de detalle por orden
+const int MAX_RESULTADOS     = 20; // Límite de resultados para búsquedas múltiples
+
+const char* RUTA_TALLER    = "datos/taller.bin";
+const char* RUTA_VEHICULOS = "datos/vehiculos.bin";
+const char* RUTA_MECANICOS = "datos/mecanicos.bin";
+const char* RUTA_REPUESTOS = "datos/repuestos.bin";
+const char* RUTA_ORDENES   = "datos/ordenes.bin";
+
+// enum (Códigos de retorno para especificar tipo de error)
+enum CodigoResultado {
+    RES_OK = 0,
+    RES_ERROR_ARCHIVO,
+    RES_NO_EXISTE,
+    RES_ELIMINADO,
+    RES_DUPLICADO,
+    RES_DATOS_INVALIDOS,
+    RES_TIENE_RELACIONES,
+    RES_VEHICULO_NO_EXISTE,
+    RES_VEHICULO_ELIMINADO,
+    RES_MECANICO_NO_EXISTE,
+    RES_MECANICO_DE_BAJA,
+    RES_REPUESTO_NO_EXISTE,
+    RES_REPUESTO_ELIMINADO,
+    RES_ORDEN_YA_ABIERTA,
+    RES_LIMITE_ORDENES_MECANICO,
+    RES_KM_MENOR,
+    RES_ORDEN_NO_ABIERTA,
+    RES_ORDEN_YA_ANULADA,
+    RES_STOCK_INSUFICIENTE,
+    RES_LIMITE_DETALLES,
+    RES_DETALLE_VACIO_SIN_MANO_OBRA
+};
+
+// structs
+
+struct ArchivoHeader { // Registra de forma independiente en cada .bin (excepto taller)
+    int cantidadRegistros; // Total histórico incluyendo borrado lógico
+    int proximoID;
+    int registrosActivos;  // Total sin borrado lógico (false)
+    int version;
+};
+
 struct Taller{
     char nombre[100];
     char rif[20];
     char direccion[200];
     char telefono[20];
+    time_t fechaCreacion;
+    time_t fechaUltimaModificacion;
 };
 
 struct Vehiculo{
@@ -20,7 +69,10 @@ struct Vehiculo{
     char nombrePropietario[100];
     char cedulaPropietario[20];
     char telefonoPropietario[20];
-    char fechaRegistro[11]; //yyyy-mm-dd
+
+    bool eliminado;
+    time_t fechaCreacion;
+    time_t fechaUltimaModificacion;
 };
 
 struct Mecanico{
@@ -28,7 +80,10 @@ struct Mecanico{
     char nombre[100];
     char cedula[20];
     char especialidad[20];
-    char fechaIngreso[11]; //yyyy-mm-dd
+
+    bool eliminado;        // true = dado de baja
+    time_t fechaCreacion;
+    time_t fechaUltimaModificacion;    
 };
 
 struct Repuesto {
@@ -39,7 +94,10 @@ struct Repuesto {
     float   precio;
     int     stock;
     int     stockMinimo;
-    char    fechaRegistro [11]; //yyyy-mm-dd
+
+    bool eliminado;        // true = dado de baja
+    time_t fechaCreacion;
+    time_t fechaUltimaModificacion; 
 };
 
 struct DetalleOrden {
@@ -59,26 +117,115 @@ struct OrdenServicio {
     int     kilometrajeIngreso;
     float   manoObra;
 
-    
-    DetalleOrden* detalles;
+    //    
+    DetalleOrden detalles [MAX_DETALLES_ORDEN];
     int           numDetalles;
-    int           capacidadDetalles;
+
+    bool eliminado;        // no se elimina: siempre false
+    time_t fechaCreacion;
+    time_t fechaUltimaModificacion; 
 };
 
-struct SistemaTaller{
-    Taller taller;                  //Datos del taller
+//=============================
+//      CAPA PERSISTENCIA
+//=============================
+
+void crearDirectorio(const char* ruta) {
+    _mkdir(ruta);
+    // Requiere validación?
+}
+
+long calcularOffset(int id, size_t tamanioEstructura) {
+    int indiceFisico = id - 1;
+    return static_cast<long>(sizeof(ArchivoHeader) + indiceFisico * tamanioEstructura);
+}
+// Inicializar archivo de entidad con su ArchivoHeader si no existe
+bool inicialiarArchivoEntidad(const char* ruta) {
+    ifstream taller(ruta, ios::binary);
+    if (taller.is_open()) {
+        // Si existe verificamos que tenga el tamaño de al menos un ArchivoHeader
+        taller.seekg(0, ios::end);
+        streampos tam = taller.tellg();
+        taller.close();
+        if (tam >= static_cast<streampos>(sizeof(ArchivoHeader))) {
+            return true; // Existe, listo para usar
+        }
+    }
+
+    ofstream crear(ruta, ios::binary | ios::out);
+    if (!crear.is_open()) {
+        return false;
+    }
+
+    ArchivoHeader headerInicial;
+    headerInicial.cantidadRegistros = 0;
+    headerInicial.proximoID         = 1;
+    headerInicial.registrosActivos  = 0;
+    headerInicial.version           = 1;
     
-    Vehiculo*      vehiculos;    int numVehiculos; int capacidadVehiculos;
-    Mecanico*      mecanicos;    int numMecanicos; int capacidadMecanicos;
-    Repuesto*      repuestos;    int numRepuestos; int capacidadRepuestos;
-    OrdenServicio* ordenes;      int numOrdenes;   int capacidadOrdenes;
-    
-    //Contadores para IDs autoincrementales
-    int siguienteIdVehiculo;
-    int siguienteIdMecanico;
-    int siguienteIdRepuesto;
-    int siguienteIdOrden;
-};
+    crear.write(reinterpret_cast<const char*>(&headerInicial), sizeof(ArchivoHeader));
+    bool exito = crear.good();
+    crear.close();
+    return exito;
+}
+
+bool leerHeader(const char* ruta, ArchivoHeader &header) {
+    ifstream archivo(ruta, ios::binary);
+    if (!archivo.is_open()) {
+        return false;
+    }
+    archivo.seekg(0, ios::beg);
+    archivo.read(reinterpret_cast<char*>(&header), sizeof(ArchivoHeader));
+    bool exito = archivo.good();
+    archivo.close();
+    return exito;
+}
+
+bool actualizarHeader(const char* ruta, const ArchivoHeader &header) {
+    fstream archivo(ruta, ios::binary | ios::in | ios::out);
+    if (!archivo.is_open()) {
+        return false;
+    }
+    archivo.seekp(0, ios::beg);
+    archivo.write(reinterpret_cast<const char*>(&header), sizeof(ArchivoHeader));
+    bool exito = archivo.good();
+    archivo.close();
+    return exito;
+}
+
+bool existeArchivoTaller() {
+    ifstream archivo(RUTA_TALLER, ios::binary);
+    if (!archivo.is_open()) return false;
+    archivo.seekg(0, ios::end);
+    bool valido = (archivo.tellg()) >= static_cast<streampos>(sizeof(Taller));
+    archivo.close();
+    return valido;
+}
+
+bool guardarTaller(Taller &datos) {
+    ofstream archivo(RUTA_TALLER, ios::binary | ios::out);
+    if (!archivo.is_open()) return false;
+
+    time_t ahora = time(nullptr);
+    datos.fechaCreacion           = ahora;
+    datos.fechaUltimaModificacion = ahora;
+
+    archivo.write(reinterpret_cast<const char*>(&datos), sizeof(Taller));
+    bool exito = archivo.good();
+    archivo.close();
+    return exito;
+}
+
+bool leerTaller(Taller &datos) {
+    ifstream archivo(RUTA_TALLER,ios::binary);
+    if (!archivo.is_open()) return false;
+
+    archivo.seekg(0, ios::beg);
+    archivo.read(reinterpret_cast<char*>(&datos), sizeof(Taller));
+    bool exito = archivo.good();
+    archivo.close();
+    return exito;
+}
 
 //=========================
 //      CAPA LOGICA
@@ -188,7 +335,7 @@ bool pedirConfirmacion(const char* mensaje){
     return (resp == 'S' || resp == 's');
 }
 
-//por si acaso
+/*por si acaso
 Vehiculo* buscarVehiculoPorPlaca(SistemaTaller* s, const char* placa);
 Vehiculo* buscarVehiculoPorID(SistemaTaller* s, int id);
 Mecanico* buscarMecanicoPorID(SistemaTaller* s, int id);
