@@ -140,7 +140,7 @@ long calcularOffset(int id, size_t tamanioEstructura) {
     return static_cast<long>(sizeof(ArchivoHeader) + indiceFisico * tamanioEstructura);
 }
 // Inicializar archivo de entidad con su ArchivoHeader si no existe
-bool inicialiarArchivoEntidad(const char* ruta) {
+bool inicializarArchivoEntidad(const char* ruta) {
     ifstream taller(ruta, ios::binary);
     if (taller.is_open()) {
         // Si existe verificamos que tenga el tamaño de al menos un ArchivoHeader
@@ -335,147 +335,101 @@ bool pedirConfirmacion(const char* mensaje){
     return (resp == 'S' || resp == 's');
 }
 
-/*por si acaso
-Vehiculo* buscarVehiculoPorPlaca(SistemaTaller* s, const char* placa);
-Vehiculo* buscarVehiculoPorID(SistemaTaller* s, int id);
-Mecanico* buscarMecanicoPorID(SistemaTaller* s, int id);
-Repuesto* buscarRepuestoPorID(SistemaTaller* s, int id);
-Repuesto* buscarRepuestoPorCodigo(SistemaTaller* s, const char* codigo);
-OrdenServicio* buscarOrdenPorID(SistemaTaller* s, int id);
-
-//==========================================
-//       CAPA DE LOGICA: SISTEMA
-//==========================================
-
-//Inializar el sistema (reserva capacidad 4 para entidades y 2 para detalles)
-void inicializarSistema(SistemaTaller* s, const char* nombre, const char* rif, const char* direccion, const char* telefono){
-    
-    //1. Copiar datos del taller caracter a caracter
-    int i = 0;
-    for(i = 0; i < 99 && nombre[i] != '\0'; i++) s->taller.nombre[i] = nombre[i];
-    s->taller.nombre[i] = '\0';
-
-    for(i = 0; i < 19 && rif[i] != '\0'; i++) s->taller.rif[i] = rif[i];
-    s->taller.rif[i] = '\0';
-
-    for(i = 0; i < 199 && direccion[i] != '\0'; i++) s->taller.direccion[i] = direccion[i];
-    s->taller.direccion[i] = '\0';
-
-    for(i = 0; i < 19 && telefono[i] != '\0'; i++) s->taller.telefono[i] = telefono[i];
-    s->taller.telefono[i] = '\0';
-
-    //2. Poner contadores en cero
-    s->numVehiculos = 0;
-    s->numMecanicos = 0;
-    s->numRepuestos = 0;
-    s->numOrdenes   = 0;
-
-    //3. Capacidades iniciales en en 4
-    s->capacidadVehiculos = 4;
-    s->capacidadMecanicos = 4;
-    s->capacidadRepuestos = 4;
-    s->capacidadOrdenes   = 4;
-
-    //4. Reservar memoria dinamica con new
-    s->vehiculos = new Vehiculo[s->capacidadVehiculos];
-    s->mecanicos = new Mecanico[s->capacidadMecanicos];
-    s->repuestos = new Repuesto[s->capacidadRepuestos];
-    s->ordenes   = new OrdenServicio[s->capacidadOrdenes];
-
-    //5. IDs en 1
-    s->siguienteIdVehiculo = 1;
-    s->siguienteIdMecanico = 1;
-    s->siguienteIdRepuesto = 1;
-    s->siguienteIdOrden    = 1;
-}
-
-void liberarSistema(SistemaTaller* s) {
-    if (s == nullptr) return;
-
-    // Liberar primero la memoria anidada (arreglo de detalles de cada orden)
-    for (int i = 0; i < s->numOrdenes; i++) {
-        if (s->ordenes[i].detalles != nullptr) {
-            delete[] s->ordenes[i].detalles;
-            s->ordenes[i].detalles = nullptr;
-        }
-    }
-
-    // Liberar los arreglos principales de entidades
-    delete[] s->vehiculos; s->vehiculos = nullptr;
-    delete[] s->mecanicos; s->mecanicos = nullptr;
-    delete[] s->repuestos; s->repuestos = nullptr;
-    delete[] s->ordenes;   s->ordenes   = nullptr;
-}
-
 //==========================================
 //       CAPA DE LOGICA: VEHICULOS
 //==========================================
 
-Vehiculo* agregarVehiculo(SistemaTaller* s, Vehiculo datos){
+// Declaración previa para que lógica la reconozca
+bool buscarVehiculoPorPlaca(const char* placa, Vehiculo &vOut);
+
+bool agregarVehiculo(Vehiculo datos){
     // Validamos que los textos obligatorios no esten vacios
     if (datos.placa[0] == '\0' || datos.marca[0] == '\0' || datos.modelo[0] == '\0' ||
         datos.nombrePropietario[0] == '\0' || datos.cedulaPropietario[0] == '\0') {
-        return nullptr;
+        return false;
     }
 
     // Validamos los formatos de placa, cedula y fecha
     if (!validarPlaca(datos.placa) || !validarCedula(datos.cedulaPropietario) || !validarFecha(datos.fechaRegistro)) {
-        return nullptr;
+        return false;
     }
 
     //Validamos anio (1950 - 2027) y kilometraje (>=0)
-    if(datos.anio < 1950 || datos.anio > 2027 || datos.kilometraje < 0) return nullptr;
+    if(datos.anio < 1950 || datos.anio > 2027 || datos.kilometraje < 0) return false;
     
     //Validar que la placa no este duplicada
-    if(buscarVehiculoPorPlaca(s, datos.placa) != nullptr) return nullptr;
+    Vehiculo temp;
+    if(buscarVehiculoPorPlaca(datos.placa, temp) != nullptr){
+        return false;
+    }
+
+    //2. Leer header para obtener el proximo ID autoincremental
+    ArchivoHeader header;
+    if (!leerHeader(RUTA_VEHICULOS, header)) return false;
+
+    datos.id = header.proximoID;
+    datos.eliminado = false;
+    time_t ahora = time(nullptr);
+    datos.fechaCreacion = ahora;
+    datos.fechaUltimaModificacion = ahora;
+
+    //3. Escribir el nuevo vehiculo al final del archivo binario
+    ofstream archivo(RUTA_VEHICULOS, ios::binary | ios::app);
+    if (!archivo.is_open()) return false;
     
-    //1. Verificar si el arreglo esta lleno 
-    if (s->numVehiculos >= s->capacidadVehiculos){
-        //1.1 Duplicar la capacidad
-        int nuevaCapacidad = s->capacidadVehiculos * 2;
+    archivo.write(reinterpret_cast<const char*>(&datos), sizeof(Vehiculo));
+    bool exito = archivo.good();
+    archivo.close();
 
-        //1.2 Crear un nuevo arreglo con la nueva capacidad
-        Vehiculo* nuevosVehiculos = new Vehiculo[nuevaCapacidad];
+    if (!exito) return false;
 
-        //1.3 Copiar los datos del arreglo viejo al nuevo 
-        for (int i = 0; i < s->numVehiculos; i++){
-            nuevosVehiculos[i] = s->vehiculos[i];
+    //4. Actualizar el header en el archivo
+    header.cantidadRegistros++;
+    header.registrosActivos++;
+    header.proximoID++;
+    actualizarHeader(RUTA_VEHICULOS, header);
+
+    return true;
+}
+
+bool buscarVehiculoPorID(int id, Vehiculo &vOut){
+    ArchivoHeader header;
+    if (!leerHeader(RUTA_VEHICULOS, header)) return false;
+
+    if (id < 1 || id >= header.proximoID) return false;
+
+    ifstream archivo(RUTA_VEHICULOS, ios::binary);
+    if (!archivo.is_open()) return false;
+
+    //Acceso aleatorio directo con la formula de offset
+    long offset = calcularOffset(id, sizeof(Vehiculo));
+    archivo.seekg(offset, ios::beg);
+    archivo.read(reinterpret_cast<char*>(&vOut), sizeof(Vehiculo));
+    archivo.close();
+
+    //Validar lectura correcta, ID coincidente y que no este eliminado logicamente
+    if (!archivo.good() || vOut.eliminado || vOut.id != id){
+        return false;
+    }
+
+    return true;
+}
+
+bool buscarVehiculoPorPlaca(const char* placa, Vehiculo &vOut){
+    ifstream archivo(RUTA_VEHICULOS, ios::binary);
+    if (!archivo.is_open()) return false;
+
+    archivo.seekg(sizeof(ArchivoHeader), ios::beg);
+    Vehiculo temp;
+    while (archivo.read(reinterpret_cast<char*>(&temp), sizeof(Vehiculo))) {
+        if (!temp.eliminado && compararCadenasExactas(temp.placa, placa)) {
+            vOut = temp;
+            archivo.close();
+            return true;
         }
-
-        //1.4 Liberar la memoria del arreglo viejo
-        delete[] s->vehiculos;
-
-        //1.5 Actualizar el puntero y la capacidad
-        s->vehiculos = nuevosVehiculos;
-        s->capacidadVehiculos = nuevaCapacidad;
     }
-
-    //2. Asignar un ID autoincremental al nuevo vehículo
-    datos.id = s->siguienteIdVehiculo;
-    s->siguienteIdVehiculo++;
-
-    //3. Guardar el nuevo vehículo en el arreglo
-    s->vehiculos[s->numVehiculos] = datos;
-
-    //4. Incrementar el contador de vehículos
-    s->numVehiculos++;
-
-    //5. Retornar un puntero al nuevo vehículo
-    return &(s->vehiculos[s->numVehiculos -1]);
-}
-
-Vehiculo* buscarVehiculoPorID(SistemaTaller* s, int id){
-    for(int i = 0; i < s->numVehiculos; i++){
-        if (s->vehiculos[i].id == id) return &(s->vehiculos[i]);
-    }
-    return nullptr;
-}
-
-Vehiculo* buscarVehiculoPorPlaca(SistemaTaller* s, const char* placa){
-    for(int i = 0; i < s->numVehiculos; i++){
-        if (compararCadenasExactas(s->vehiculos[i].placa, placa)) return &(s->vehiculos[i]);
-    }
-    return nullptr;
+    archivo.close();
+    return false;
 }
 
 Vehiculo** buscarVehiculosPorPropietario(SistemaTaller* s, const char* subcadena, int* cantidad){
@@ -614,7 +568,7 @@ bool eliminarVehiculo(SistemaTaller* s, int id){
 
     return true; //Eliminacion exitante
 }
-
+/*por si acaso
 //==========================================
 //       CAPA DE LOGICA: MECANICOS
 //==========================================
@@ -2400,3 +2354,4 @@ liberarSistema(&miTaller);
 //opcion y opcion2 pasaron a llamarse mayuya por el homenaje a tan hermoso ser
 return 0;
 }
+*/
