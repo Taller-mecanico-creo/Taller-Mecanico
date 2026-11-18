@@ -228,6 +228,104 @@ bool leerTaller(Taller &datos) {
 }
 
 //==========================================
+//         CAPA DE PERSISTENCIA: VEHICULOS
+//==========================================
+
+CodigoResultado persistenciaGuardarVehiculo(Vehiculo &nuevo, int &idAsignado){
+    ArchivoHeader h;
+    if (!leerHeader(RUTA_VEHICULOS, h)) return RES_ERROR_ARCHIVO;
+
+    time_t ahora = time(nullptr);
+    nuevo.id                      = h.proximoID;
+    nuevo.eliminado               = false;
+    nuevo.fechaCreacion           = ahora;
+    nuevo.fechaUltimaModificacion = ahora;
+
+    fstream archivo(RUTA_VEHICULOS, ios::binary | ios::in | ios::out); 
+    if (!archivo.is_open()) return RES_ERROR_ARCHIVO;
+    
+    long pos = calcularOffset(nuevo.id, sizeof(Vehiculo));
+    archivo.seekp(pos, ios::beg);
+    archivo.write(reinterpret_cast<const char*>(&nuevo), sizeof(Vehiculo));
+    if (!archivo.good()) {
+        archivo.close();
+        return RES_ERROR_ARCHIVO;
+    }
+    archivo.close();
+
+    h.cantidadRegistros++;
+    h.registrosActivos++;
+    h.proximoID++;
+    if (!actualizarHeader(RUTA_VEHICULOS, h)) return RES_ERROR_ARCHIVO;
+
+    idAsignado = nuevo.id;
+    return RES_OK;
+}
+
+CodigoResultado persistenciaLeerVehiculoPorID(int id, Vehiculo &registro, long* posBytesLeida = nullptr){
+    ArchivoHeader h;
+    if (!leerHeader(RUTA_VEHICULOS, h)) return RES_ERROR_ARCHIVO;
+    if (id < 1 || id > h.cantidadRegistros) return RES_NO_EXISTE;
+
+    ifstream archivo(RUTA_VEHICULOS, ios::binary);
+    if (!archivo.is_open()) return RES_ERROR_ARCHIVO;
+
+    long pos = calcularOffset(id, sizeof(Vehiculo));
+    if (posBytesLeida != nullptr) *posBytesLeida = pos;
+
+    archivo.seekg(pos, ios::beg);
+    archivo.read(reinterpret_cast<char*>(&registro), sizeof(Vehiculo));
+    bool ok = archivo.good();
+    archivo.close();
+
+    return ok ? RES_OK : RES_ERROR_ARCHIVO;
+}
+
+CodigoResultado persistenciaSobrescribirVehiculo(Vehiculo &registro){
+    ArchivoHeader h;
+    if (!leerHeader(RUTA_VEHICULOS, h)) return RES_ERROR_ARCHIVO;
+    if (registro.id < 1 || registro.id > h.cantidadRegistros) return RES_NO_EXISTE;
+
+    registro.fechaUltimaModificacion = time(nullptr);
+
+    fstream archivo(RUTA_VEHICULOS, ios::binary | ios::in | ios::out);
+    if (!archivo.is_open()) return RES_ERROR_ARCHIVO;
+
+    long pos = calcularOffset(registro.id, sizeof(Vehiculo));
+    archivo.seekp(pos, ios::beg);
+    archivo.write(reinterpret_cast<const char*>(&registro), sizeof(Vehiculo));
+    bool ok= archivo.good();
+    archivo.close();
+
+    return ok ? RES_OK : RES_ERROR_ARCHIVO;
+}
+
+CodigoResultado persistenciaEliminarVehiculo(int id){
+    Vehiculo v;
+    CodigoResultado res = persistenciaLeerVehiculoPorID(id, v);
+    if (res != RES_OK) return res;
+    if (v.eliminado) return RES_ELIMINADO;
+
+    v.eliminado = true;
+    res = persistenciaSobrescribirVehiculo(v);
+    if (res != RES_OK) return res;
+
+    ArchivoHeader h;
+    if (!leerHeader(RUTA_VEHICULOS, h)) return RES_ERROR_ARCHIVO;
+    if (h.registrosActivos > 0) h.registrosActivos--;
+    if (!actualizarHeader(RUTA_VEHICULOS, h)) return RES_ERROR_ARCHIVO;
+
+    return RES_OK;
+}
+
+CodigoResultado persistenciaContarVehiculosActivos(int &cantidad){
+    ArchivoHeader h;
+    if (!leerHeader(RUTA_VEHICULOS, h)) return RES_ERROR_ARCHIVO;
+    cantidad = h.registrosActivos;
+    return RES_OK;
+}
+
+//==========================================
 //       CAPA DE PERSISTENCIA: MECANICOS
 //==========================================
 
@@ -328,7 +426,7 @@ CodigoResultado persistenciaEliminarMecanico(int id) {
 //       CAPA DE PERSISTENCIA: REPUESTOS
 //============================================
 
-CodigoResultado persistenciaGuardarRepuesto(Repuesto &nuevo, int &idAsignado) {
+CodigoResultado persistenciaGuardarRepuesto(Repuesto &nuevo, int &idAsignado){
     ArchivoHeader h;
     if (!leerHeader(RUTA_REPUESTOS, h)) return RES_ERROR_ARCHIVO;
 
@@ -359,7 +457,7 @@ CodigoResultado persistenciaGuardarRepuesto(Repuesto &nuevo, int &idAsignado) {
     return RES_OK;
 }
 
-CodigoResultado persistenciaLeerRepuestoPorID(int id, Repuesto &registro, long* posBytesLeida = nullptr) {
+CodigoResultado persistenciaLeerRepuestoPorID(int id, Repuesto &registro, long* posBytesLeida = nullptr){
     ArchivoHeader h;
     if (!leerHeader(RUTA_REPUESTOS, h)) return RES_ERROR_ARCHIVO;
     if (id < 1 || id > h.cantidadRegistros) return RES_NO_EXISTE;
@@ -378,7 +476,7 @@ CodigoResultado persistenciaLeerRepuestoPorID(int id, Repuesto &registro, long* 
     return ok ? RES_OK : RES_ERROR_ARCHIVO;
 }
 
-CodigoResultado persistenciaSobrescribirRepuesto(Repuesto &registro) {
+CodigoResultado persistenciaSobrescribirRepuesto(Repuesto &registro){
     ArchivoHeader h;
     if (!leerHeader(RUTA_REPUESTOS, h)) return RES_ERROR_ARCHIVO;
     if (registro.id < 1 || registro.id > h.cantidadRegistros) return RES_NO_EXISTE;
@@ -397,7 +495,7 @@ CodigoResultado persistenciaSobrescribirRepuesto(Repuesto &registro) {
     return ok ? RES_OK : RES_ERROR_ARCHIVO;
 }
 
-CodigoResultado persistenciaEliminarRepuesto(int id) {
+CodigoResultado persistenciaEliminarRepuesto(int id){
     Repuesto r;
     CodigoResultado res = persistenciaLeerRepuestoPorID(id, r);
     if (res != RES_OK) return res;
@@ -415,10 +513,90 @@ CodigoResultado persistenciaEliminarRepuesto(int id) {
     return RES_OK;
 }
 
-int persistenciaContarRepuestosActivos() {
+int persistenciaContarRepuestosActivos(){
     ArchivoHeader h;
     if (!leerHeader(RUTA_REPUESTOS, h)) return 0;
     return h.registrosActivos;
+}
+
+//=========================================
+//       CAPA DE PERSISTENCIA: ORDENES
+//=========================================
+
+CodigoResultado persistenciaGuardarOrden(OrdenServicio &nuevo, int &idAsignado){
+    ArchivoHeader h;
+    if (!leerHeader(RUTA_ORDENES, h)) return RES_ERROR_ARCHIVO;
+
+    time_t ahora = time(nullptr);
+    nuevo.id                      = h.proximoID;
+    nuevo.eliminado               = false; //las ordenes no se eleminan fisicamente (siempre flase, se anulan o se cierran) 
+    nuevo.fechaCreacion           = ahora;
+    nuevo.fechaUltimaModificacion = ahora;
+
+    fstream archivo(RUTA_ORDENES, ios::binary | ios::in | ios::out);
+    if (!archivo.is_open()) return RES_ERROR_ARCHIVO;
+
+    long pos = calcularOffset(nuevo.id, sizeof(OrdenServicio));
+    archivo.seekp(pos, ios::beg);
+    archivo.write(reinterpret_cast<const char*>(&nuevo), sizeof(OrdenServicio));
+    if (!archivo.good()) {
+        archivo.close();
+        return RES_ERROR_ARCHIVO;
+    }
+    archivo.close();
+
+    h.cantidadRegistros++;
+    h.registrosActivos++;
+    h.proximoID++;
+    if (!actualizarHeader(RUTA_ORDENES, h)) return RES_ERROR_ARCHIVO;
+
+    idAsignado = nuevo.id;
+    return RES_OK;
+}
+
+CodigoResultado persistenciaLeerOrdenPorID(int id, OrdenServicio &registro, long* posBytesLeida = nullptr){
+    ArchivoHeader h;
+    if (!leerHeader(RUTA_ORDENES, h)) return RES_ERROR_ARCHIVO;
+    if (id < 1 || id > h.cantidadRegistros) return RES_NO_EXISTE;
+
+    ifstream archivo(RUTA_ORDENES, ios::binary);
+    if (!archivo.is_open()) return RES_ERROR_ARCHIVO;
+
+    long pos = calcularOffset(id, sizeof(OrdenServicio));
+    if (posBytesLeida != nullptr) *posBytesLeida = pos;
+
+    archivo.seekg(pos, ios::beg);
+    archivo.read(reinterpret_cast<char*>(&registro), sizeof(OrdenServicio));
+    bool ok = archivo.good();
+    archivo.close();
+
+    return ok ? RES_OK : RES_ERROR_ARCHIVO;
+}
+
+CodigoResultado persistenciaSobrescribirOrden(OrdenServicio &registro){
+    ArchivoHeader h;
+    if (!leerHeader(RUTA_ORDENES, h)) return RES_ERROR_ARCHIVO;
+    if (registro.id < 1 || registro.id > h.cantidadRegistros) return RES_NO_EXISTE;
+
+    registro.fechaUltimaModificacion = time(nullptr);
+
+    fstream archivo(RUTA_ORDENES, ios::binary | ios::in | ios::out);
+    if (!archivo.is_open()) return RES_ERROR_ARCHIVO;
+    
+    long pos = calcularOffset(registro.id, sizeof(OrdenServicio));
+    archivo.seekp(pos, ios::beg);
+    archivo.write(reinterpret_cast<const char*>(&registro), sizeof(OrdenServicio));
+    bool ok = archivo.good();
+    archivo.close();
+
+    return ok ? RES_OK : RES_ERROR_ARCHIVO;
+}
+
+CodigoResultado persistenciaContarOrdenesActivas(int &cantidad){
+    ArchivoHeader h;
+    if (!leerHeader(RUTA_ORDENES, h)) return RES_ERROR_ARCHIVO;
+    cantidad = h.registrosActivos;
+    return RES_OK;
 }
 
 //=========================
