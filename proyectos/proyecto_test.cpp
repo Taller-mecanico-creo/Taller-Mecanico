@@ -80,6 +80,7 @@ struct Mecanico{
     char nombre[100];
     char cedula[20];
     char especialidad[20];
+    char fechaIngreso[11];
 
     bool eliminado;        // true = dado de baja
     time_t fechaCreacion;
@@ -156,7 +157,7 @@ bool inicializarArchivoEntidad(const char* ruta) {
     if (!crear.is_open()) {
         return false;
     }
-
+    // Valores Iniciales
     ArchivoHeader headerInicial;
     headerInicial.cantidadRegistros = 0;
     headerInicial.proximoID         = 1;
@@ -193,6 +194,15 @@ bool actualizarHeader(const char* ruta, const ArchivoHeader &header) {
     return exito;
 }
 
+// Auxiliar que retorna el total histórico de registros desde el Header
+int persistenciaObtenerTotalRegistros(const char* ruta) {
+    ArchivoHeader h;
+    if (!leerHeader(ruta, h)) {
+        return 0;
+    }
+    return h.cantidadRegistros;
+}
+
 bool existeArchivoTaller() {
     ifstream archivo(RUTA_TALLER, ios::binary);
     if (!archivo.is_open()) return false;
@@ -227,9 +237,9 @@ bool leerTaller(Taller &datos) {
     return exito;
 }
 
-//==========================================
+//============================================
 //         CAPA DE PERSISTENCIA: VEHICULOS
-//==========================================
+//============================================
 
 CodigoResultado persistenciaGuardarVehiculo(Vehiculo &nuevo, int &idAsignado){
     ArchivoHeader h;
@@ -332,16 +342,16 @@ CodigoResultado persistenciaContarVehiculosActivos(int &cantidad){
 CodigoResultado persistenciaGuardarMecanico(Mecanico &nuevo, int &idAsignado) {
     ArchivoHeader h;
     if (!leerHeader(RUTA_MECANICOS, h)) return RES_ERROR_ARCHIVO;
-
+    // Definimos el momento exacto en el que se guardó
     time_t ahora = time(nullptr);
     nuevo.id                      = h.proximoID;
     nuevo.eliminado               = false;
     nuevo.fechaCreacion           = ahora;
     nuevo.fechaUltimaModificacion = ahora;
-
+    
     fstream archivo(RUTA_MECANICOS, ios::binary | ios::in | ios::out); 
     if (!archivo.is_open()) return RES_ERROR_ARCHIVO;
-    
+    // Calculamos la posición exacta en bytes para guardar
     long pos = calcularOffset(nuevo.id, sizeof(Mecanico));
     archivo.seekp(pos, ios::beg);
     archivo.write(reinterpret_cast<const char*>(&nuevo), sizeof(Mecanico));
@@ -350,7 +360,7 @@ CodigoResultado persistenciaGuardarMecanico(Mecanico &nuevo, int &idAsignado) {
         return RES_ERROR_ARCHIVO;
     }
     archivo.close();
-
+    // Aumentamos contadores del header post guardado
     h.cantidadRegistros++;
     h.registrosActivos++;
     h.proximoID++;
@@ -363,14 +373,15 @@ CodigoResultado persistenciaGuardarMecanico(Mecanico &nuevo, int &idAsignado) {
 CodigoResultado persistenciaLeerMecanicoPorID(int id, Mecanico &registro, long*posBytesLeida = nullptr) {
     ArchivoHeader h;
     if (!leerHeader(RUTA_MECANICOS, h)) return RES_ERROR_ARCHIVO;
+    // Validamos que el id existe 
     if (id < 1 || id > h.cantidadRegistros) return RES_NO_EXISTE;
 
     ifstream archivo(RUTA_MECANICOS, ios::binary);
     if (!archivo.is_open()) return RES_ERROR_ARCHIVO;
-
+    // Calculamos la posición en la que se encuentra el registro a buscar
     long pos = calcularOffset(id, sizeof(Mecanico));
     if (posBytesLeida != nullptr) *posBytesLeida = pos;
-
+    // Leemos solamente los bytes correspondientes a ese registro
     archivo.seekg(pos, ios::beg);
     archivo.read(reinterpret_cast<char*>(&registro), sizeof(Mecanico));
     bool ok = archivo.good();
@@ -384,14 +395,16 @@ CodigoResultado persistenciaSobrescribirMecanico(Mecanico &registro) {
 
     if (!leerHeader(RUTA_MECANICOS, h)) return RES_ERROR_ARCHIVO;
     if (registro.id < 1 || registro.id > h.cantidadRegistros) return RES_NO_EXISTE;
-
+    
     registro.fechaUltimaModificacion = time(nullptr);
 
     fstream archivo(RUTA_MECANICOS, ios::binary | ios::in | ios::out);
     if (!archivo.is_open()) return RES_ERROR_ARCHIVO;
-
+    // Calculamos la posición en la que se encuentra el registro a buscar
     long pos = calcularOffset(registro.id, sizeof(Mecanico));
+    // Abrimos desde el principio hasta recorrer de forma exacta lo calculado
     archivo.seekp(pos, ios::beg);
+    // Sobreescribimos solamente los bytes correspondientes a ese registro
     archivo.write(reinterpret_cast<const char*>(&registro), sizeof(Mecanico));
     bool ok= archivo.good();
     archivo.close();
@@ -519,6 +532,8 @@ int persistenciaContarRepuestosActivos(){
     return h.registrosActivos;
 }
 
+// verificar si orden abierta mecanico deberia ir por aca
+
 //=========================================
 //       CAPA DE PERSISTENCIA: ORDENES
 //=========================================
@@ -597,6 +612,14 @@ CodigoResultado persistenciaContarOrdenesActivas(int &cantidad){
     if (!leerHeader(RUTA_ORDENES, h)) return RES_ERROR_ARCHIVO;
     cantidad = h.registrosActivos;
     return RES_OK;
+}
+
+bool inicializarArchivosSistema() {
+    crearDirectorio("datos");
+    return inicializarArchivoEntidad(RUTA_VEHICULOS) &&
+           inicializarArchivoEntidad(RUTA_MECANICOS) &&
+           inicializarArchivoEntidad(RUTA_REPUESTOS) &&
+           inicializarArchivoEntidad(RUTA_ORDENES);
 }
 
 //=========================
@@ -804,7 +827,7 @@ bool buscarVehiculoPorPlaca(const char* placa, Vehiculo &vOut){
     return false;
 }
 
-Vehiculo** buscarVehiculosPorPropietario(SistemaTaller* s, const char* subcadena, int* cantidad){
+Vehiculo** buscarVehiculosPorPropietario(SistemaTaller* s, const char* subcadena, int* cantidad) {
     int encontrados = 0;
     for(int i = 0; i < s->numVehiculos; i++){
         if (compararSubcadenaIgnoreCase(s->vehiculos[i].nombrePropietario, subcadena)) encontrados++;   
@@ -940,225 +963,240 @@ bool eliminarVehiculo(SistemaTaller* s, int id){
 
     return true; //Eliminacion exitante
 }
-/*por si acaso
+
 //==========================================
 //       CAPA DE LOGICA: MECANICOS
 //==========================================
 
-//Funcion auxiliar para verificar que no existen duplicados
-Mecanico* buscarMecanicoPorCedula(SistemaTaller* s, const char* cedula) {
-    for (int i = 0; i < s->numMecanicos; i++) {
-        if (compararCadenasExactas(s->mecanicos[i].cedula, cedula)) return &(s->mecanicos[i]);   
-    }
-    return nullptr;
-}
+int ContarOrdenesAbiertasMecanico(int idMecanico) {
+    // Le preguntamos a la persistencia cuántas órdenes históricas hay en total
+    int totalOrdenes = persistenciaObtenerTotalRegistros(RUTA_ORDENES);
+    int contador = 0;
 
-Mecanico* buscarMecanicoPorID(SistemaTaller* s, int id) {
-    for (int i = 0; i < s->numMecanicos; i++) {
-        if (s->mecanicos[i].id == id) return &(s->mecanicos[i]);
+    // Recorremos por ID (1 a totalOrdenes) cargando una orden a la vez
+    for (int id = 1; id <= totalOrdenes; id++) {
+        OrdenServicio o;
+        if (persistenciaLeerOrdenPorID(id, o) == RES_OK) {
+            // Evalúa que pertenezca al mecánico y esté ABIERTA
+            if (!o.eliminado && o.idMecanico == idMecanico && compararCadenasExactas(o.estado, "ABIERTA")) {
+                contador++;
+            }
+        }
     }
-    return nullptr;
+    return contador;
 }
-
-Mecanico* registrarMecanico(SistemaTaller* s, Mecanico datos) {
+// Auxiliar que verifica que no existen duplicados (busca mecánico activo)
+CodigoResultado buscarMecanicoPorCedula(const char* cedula, Mecanico &salida) {
+    int totalMecanicos = persistenciaObtenerTotalRegistros(RUTA_MECANICOS);
+    for (int id = 1; id <= totalMecanicos; id++) {
+        Mecanico m;
+        if (persistenciaLeerMecanicoPorID(id, m) == RES_OK) {
+            if (!m.eliminado && compararCadenasExactas(m.cedula, cedula)) {
+                salida = m;
+                return RES_OK;
+            }
+        }
+    }
+    return RES_NO_EXISTE;
+}
+// Distingue si es activo (RES_OK) o dado de baja (RES_ELIMINADO). Entrega con 'salida'.
+CodigoResultado ObtenerMecanicoPorID(int id, Mecanico &salida, long* posBytesLeida = nullptr) {   
+    CodigoResultado res = persistenciaLeerMecanicoPorID(id, salida, posBytesLeida);
+    if (res != RES_OK) return res;
+    if (salida.eliminado) return RES_ELIMINADO; // 'salida' ya tiene los datos para órdenes históricas
+    return RES_OK;
+}
+CodigoResultado registrarMecanico(Mecanico datos, int &idAsignado) {
     // Validamos que los campos no estén vacíos y la especialidad sea válida
     if (datos.nombre[0] == '\0' || !validarCedula(datos.cedula) || !validarFecha(datos.fechaIngreso)) {
-        return nullptr;
+        return RES_DATOS_INVALIDOS;
     }
     // Validar que la especialidad sea una de las 5 permitidas caracter por caracter
     const char* permitidas[5] = {"MOTOR", "FRENOS", "ELECTRICIDAD", "SUSPENSION", "GENERAL"};
     bool especialidadValida = false;
     for (int k = 0; k < 5; k++){
-            if (compararCadenasExactas(datos.especialidad, permitidas[k])){
-                especialidadValida = true;
-                break;
+        if (compararCadenasExactas(datos.especialidad, permitidas[k])) {
+            especialidadValida = true;
+            break;
         }
     }
-
-    if (!especialidadValida) return nullptr;
-
+    if (!especialidadValida) return RES_DATOS_INVALIDOS;
     // Validar que la cédula no este duplicada
-    if (buscarMecanicoPorCedula(s, datos.cedula) != nullptr) return nullptr;
-
-    // 1. Verificar si el arreglo de mecanicos esta lleno
-    if (s->numMecanicos >= s->capacidadMecanicos) {
-        // 1.1 Duplicar la capacidad
-        int nuevaCap = s->capacidadMecanicos * 2;
-
-        // 1.2 Crear un nuevo arreglo dinamico con la nueva capacidad
-        Mecanico* nuevosM = new Mecanico[nuevaCap];
-
-        // 1.3 Copiar los datos del arreglo viejo al nuevo
-        for (int i = 0; i < s->numMecanicos; i++) nuevosM[i] = s->mecanicos[i];
-
-        // 1.4 Liberar la memoria del arreglo viejo
-        delete[] s->mecanicos;
-
-        // 1.5 Actualizar el puntero y la capacidad
-        s->mecanicos = nuevosM;
-        s->capacidadMecanicos = nuevaCap;
+    Mecanico existente;
+    if (buscarMecanicoPorCedula(datos.cedula, existente) == RES_OK) {
+        return RES_DUPLICADO; 
     }
-
-    // 2. Asignar un ID autoincremental al nuevo mecanico
-    datos.id = s->siguienteIdMecanico;
-    s->siguienteIdMecanico++;
-
-    // 3. Guardar el nuevo mecanico en el arreglo
-    s->mecanicos[s->numMecanicos] = datos;
-
-    // 4. Incrementar el contador de mecanicos
-    s->numMecanicos++;
-
-    // 5. Retornar un puntero al nuevo mecanico
-    return &(s->mecanicos[s->numMecanicos - 1]);
-
+    return persistenciaGuardarMecanico(datos, idAsignado);
 }
+// Activos y Dados de Baja
+CodigoResultado listarMecanicos(Mecanico resultados[], int &cantidad, bool &hayMas) {
+    // Definimos cantidad de mecánicos en 0 y negamos que hayan más
+        cantidad = 0;
+        hayMas   = false;
 
-Mecanico** listarMecanicos(SistemaTaller* s, int* cantidad) {
-    // 1. Verificamos si no hay mecanicos registrados
-    if (s->numMecanicos == 0) {
-        *cantidad = 0;
-        return nullptr;
+    int totalMecanicos = persistenciaObtenerTotalRegistros(RUTA_MECANICOS);
+    if (totalMecanicos == 0) return RES_NO_EXISTE;
+    // Solicitamos un mecánico a la vez por su ID, mediante la persistencia
+    for (int id = 1; id <= totalMecanicos; id++) {
+        Mecanico m;
+        if (persistenciaLeerMecanicoPorID(id, m) == RES_OK) {
+            if (cantidad < MAX_RESULTADOS) {
+                resultados[cantidad] = m;
+                cantidad++;
+            } else {
+                hayMas = true;
+                break; // Límite alcanzado, dejamos de leer y avisamos que hay más
+            }  
+        }
     }
-
-    // 2. Definimos la cantidad encontrada como el total de mecanicos actuales
-    *cantidad = s->numMecanicos;
-
-    // 3. Reservamos memoria dinamica para un arreglo de punteros del tamanio exacto
-    Mecanico** lista = new Mecanico*[s->numMecanicos];
-
-    // 4. Llenamos el arreglo con las direcciones de memoria de cada mecanico existente
-    for (int i = 0; i < s->numMecanicos; i++) {
-        lista[i] = &(s->mecanicos[i]);
-    }
-
-    // Retornamos el arreglo de punteros (la capa visual lo liberara con delete[])
-    return lista;
+    return (cantidad > 0) ? RES_OK : RES_NO_EXISTE;
 }
+// Dar de baja a un mecánico (Borrado lógico si no tiene órdenes abiertas)
+CodigoResultado DarDeBajaMecanico(int id) {
+    Mecanico m;
+    CodigoResultado res = ObtenerMecanicoPorID(id, m);
+    if (res != RES_OK) return res; // Retorna RES_NO_EXISTE o RES_ELIMINADO si ya estaba de baja
 
-int contarOrdenesAbiertasMecanico(SistemaTaller* s, int idMecanico) {
-    int contador = 0;
-    const char* estadoBuscado = "ABIERTA";
-
-    for (int i = 0; i < s->numOrdenes; i++) {
-       if (s->ordenes[i].idMecanico == idMecanico && compararCadenasExactas(s->ordenes[i].estado, "ABIERTA")) {
-            contador++;
-       }
+    // Rechazado si tiene órdenes abiertas
+    if (ContarOrdenesAbiertasMecanico(id) > 0) {
+        return RES_TIENE_RELACIONES;
     }
-    return contador;
+    return persistenciaEliminarMecanico(id);
 }
 
 //==========================================
 //       CAPA DE LOGICA: REPUESTOS
 //==========================================
 
-Repuesto* buscarRepuestoPorCodigo(SistemaTaller* s, const char* codigo){
-    for (int i = 0; i < s->numRepuestos; i++){
-        if (compararCadenasExactas(s->repuestos[i].codigo, codigo)) return &(s->repuestos[i]);
-    }
-    return nullptr;
+CodigoResultado buscarRepuestoPorID(int id, Repuesto &salida, long* posBytesLeida = nullptr) {
+    CodigoResultado res = persistenciaLeerRepuestoPorID(id, salida, posBytesLeida);
+    if (res != RES_OK) return res;
+    if (salida.eliminado) return RES_ELIMINADO;
+    return RES_OK;
 }
 
-Repuesto* buscarRepuestoPorID(SistemaTaller* s, int id) {
-    for (int i = 0; i < s->numRepuestos; i++) {
-        if (s->repuestos[i].id == id) return &(s->repuestos[i]);
-    }
-    return nullptr;
-}
-
-Repuesto** buscarRepuestosPorNombreParcial(SistemaTaller* s, const char* subcadena, int* cantidad){
-    int encontrados = 0;
-    for (int i = 0; i < s->numRepuestos; i++){
-        if (compararSubcadenaIgnoreCase(s->repuestos[i].nombre, subcadena)) encontrados++;
-    }
-    *cantidad = 0;
-    if (encontrados == 0) return nullptr;
-
-    Repuesto** resultados = new Repuesto*[encontrados];
-    int index = 0;
-    for (int i = 0; i <s->numRepuestos; i ++) {
-        if (compararSubcadenaIgnoreCase(s->repuestos[i].nombre, subcadena)){
-            resultados[index++] = &(s->repuestos[i]);
+CodigoResultado buscarRepuestoPorCodigo(const char* codigo, Repuesto &salida) {
+    int totalRepuestos = persistenciaObtenerTotalRegistros(RUTA_REPUESTOS);
+    // Recorremos en busca del código exacto y verificamos que el repuesto está activo
+    for (int id = 1; id <= totalRepuestos; id++) {
+        Repuesto r;
+        if (persistenciaLeerRepuestoPorID(id, r) == RES_OK) {
+            if (!r.eliminado && compararCadenasExactas(r.codigo, codigo)) {
+                salida = r;
+                return RES_OK;
+            }
         }
     }
-    *cantidad = encontrados;
-    return resultados;
+    return RES_NO_EXISTE;
 }
 
-Repuesto* registrarRepuesto(SistemaTaller* s, Repuesto datos){
-    //Validaciones de negocio (Precio > 0, Stock >= 0, Stockminimo >=0, codigo unico???)
-    if (datos.codigo[0] == '\0' || datos.nombre[0] == '\0' ||
-        datos.precio <= 0.0f || datos.stock < 0 || datos.stockMinimo < 0 || !validarFecha(datos.fechaRegistro)) {
-        return nullptr;
+CodigoResultado buscarRepuestosPorNombreParcial(const char* subcadena, Repuesto resultados[], int &cantidad, bool &hayMas) {
+    // Definimos cantidad de repuestos en 0 y negamos que hayan más
+        cantidad = 0;
+        hayMas   = false;
+
+    int totalRepuestos = persistenciaObtenerTotalRegistros(RUTA_REPUESTOS);
+    if (totalRepuestos == 0) {
+        return RES_NO_EXISTE;
     }
-    if  (buscarRepuestoPorCodigo(s, datos.codigo) != nullptr) return nullptr;
-
-    //Redimensionamiento automatico (capacidad inicial 4)
-    if (s->numRepuestos >= s->capacidadRepuestos){
-        int nuevaCap = s->capacidadRepuestos * 2;
-        Repuesto* nuevosR = new Repuesto[nuevaCap];
-        for (int i = 0; i< s->numRepuestos; i++)nuevosR[i] = s->repuestos[i];
-        delete[] s->repuestos;
-        s->repuestos = nuevosR;
-        s->capacidadRepuestos = nuevaCap;
-    }
-
-    datos.id = s->siguienteIdRepuesto++;
-    s->repuestos[s->numRepuestos] = datos;
-    s->numRepuestos++;
-    return &(s->repuestos[s->numRepuestos - 1]);
-}
-
-bool registrarEntradaMercancia(SistemaTaller* s, int idRepuesto, int cantidad){
-    if (cantidad <= 0) return false;
-    Repuesto* rep = buscarRepuestoPorID(s, idRepuesto);
-    if (rep == nullptr) return false;
-
-    rep->stock += cantidad;
-    return true;
-}
-
-Repuesto** listarRepuestos(SistemaTaller* s, int* cantidad){
-    if (s->numRepuestos == 0){
-        *cantidad = 0;
-        return nullptr;
-    }
-    *cantidad = s->numRepuestos;
-    Repuesto** lista = new Repuesto*[s->numRepuestos];
-    for (int i = 0; i< s->numRepuestos; i++) lista[i] = &(s->repuestos[i]);
-    return lista;
-}
-
-bool cambiarPrecioRepuesto(SistemaTaller* s, int idRepuesto, float nuevoPrecio){
-    if (nuevoPrecio <= 0.0f) return false;
-    Repuesto* rep = buscarRepuestoPorID(s, idRepuesto);
-    if (rep == nullptr) return false;
-
-    rep->precio = nuevoPrecio; //no afecta ordenes historicas ya cerradas
-    return true;
-}
-
-bool eliminarRepuesto(SistemaTaller* s, int idRepuesto){
-    //REchazado si aparece en detalles de alguna orden
-    for (int i = 0; i < s->numOrdenes; i++){
-        for (int j = 0; j < s->ordenes[i].numDetalles; j++){
-            if (s->ordenes[i].detalles[j].idRepuesto == idRepuesto) return false;
+    // Solicitamos un repuesto a la vez por su ID, verificamos su estado y buscamos coincidencias
+    for (int id = 1; id <= totalRepuestos; id++) {
+        Repuesto r;
+        if (persistenciaLeerRepuestoPorID(id, r) == RES_OK) {
+            if (!r.eliminado && compararSubcadenaIgnoreCase(r.nombre, subcadena)) {
+                if (cantidad < MAX_RESULTADOS) {
+                    resultados[cantidad] = r;
+                    cantidad++;
+                } else {
+                    hayMas = true;
+                    break; // Límite alcanzado, dejamos de leer y avisamos que hay más
+                }
+            }
         }
     }
-
-    int idx = -1;
-    for (int i = 0; i < s->numRepuestos; i++){
-        if (s->repuestos[i].id == idRepuesto){ idx = i; break; }
-    }
-    if (idx == -1) return false;
-
-    for (int i = idx; i < s->numRepuestos - 1; i++){
-        s->repuestos[i] = s->repuestos[i + 1];
-    }
-    s->numRepuestos--;
-    return true;
+    return (cantidad > 0) ? RES_OK : RES_NO_EXISTE;
 }
 
+CodigoResultado registrarRepuesto(Repuesto datos, int &idAsignado){
+    //Validaciones de negocio (Precio > 0, Stock >= 0, Stock minimo >=0, Código único)
+    if (datos.codigo[0] == '\0' || datos.nombre[0] == '\0' || datos.marca[0] == '\0' ||
+        datos.precio <= 0.0f || datos.stock < 0 || datos.stockMinimo < 0) {
+        return RES_DATOS_INVALIDOS;
+    }
+    // Verificamos si ya existe en el inventario
+    Repuesto existente;
+    if (buscarRepuestoPorCodigo(datos.codigo, existente) == RES_OK) return RES_DUPLICADO;
+
+    return persistenciaGuardarRepuesto(datos, idAsignado);
+}
+
+CodigoResultado registrarEntradaMercancia(int idRepuesto, int cantidad, int &nuevostock){
+    // Validamos el rango y el id correspondiente a la mercancia
+    if (cantidad <= 0) return RES_DATOS_INVALIDOS;
+    Repuesto r; 
+    CodigoResultado res = buscarRepuestoPorID(idRepuesto, r);
+    if (res != RES_OK) return res; // Entrega el error exacto
+    // Definimos los nuevos valores de stock y guardamos
+    r.stock += cantidad;
+    nuevoStock = r.stock;
+    return persistenciaSobrescribirRepuesto(r);
+}
+
+CodigoResultado listarRepuestosActivos(Repuesto resultados[], int &cantidad, bool &hayMas) {
+    cantidad = 0;
+    hayMas   = false;
+
+    int totalRepuestos = persistenciaObtenerTotalRegistros(RUTA_REPUESTOS);
+
+    for (int id = 1; id <= totalRepuestos; id++) {
+        Repuesto r;
+        if (persistenciaLeerRepuestoPorID(id, r) == RES_OK) {
+            if (!r.eliminado) {
+                if (cantidad < MAX_RESULTADOS) {
+                    resultados[cantidad] = r;
+                    cantidad++;
+                } else {
+                    hayMas = true;
+                    break;
+                }
+            }
+        }
+    }
+    return (cantidad > 0) ? RES_OK : RES_NO_EXISTE;
+}
+
+CodigoResultado cambiarPrecioRepuesto(int idRepuesto, float nuevoPrecio){
+    if (nuevoPrecio <= 0.0f) return RES_DATOS_INVALIDOS;
+    Repuesto r;
+    CodigoResultado res = buscarRepuestoPorID(idRepuesto, r);
+    if (res != RES_OK) return res;
+
+    r.precio = nuevoPrecio; //no afecta ordenes historicas ya cerradas
+    return persistenciaSobrescribirRepuesto(r);
+}
+
+CodigoResultado eliminarRepuesto(int idRepuesto){
+    Repuesto r;
+    CodigoResultado res = buscarRepuestoPorID(idRepuesto, r);
+    if (res != RES_OK) return res;
+    
+    // Verificamos a través de la persistencia si aparece en alguna orden
+    int totalOrdenes = persistenciaObtenerTotalRegistros(RUTA_ORDENES);
+    for (int idOrden = 1; idOrden <= totalOrdenes; idOrden++) {
+        OrdenServicio o;
+        if (persistenciaLeerOrdenPorID(idOrden, o) == RES_OK) {
+            if (!o.eliminado) {
+                for (int j = 0; j < o.numDetalles; j++) {
+                    if (o.detalles[j].idRepuesto == idRepuesto) {
+                        return RES_TIENE_RELACIONES; // Rechazado: usado en una orden
+                    }
+                }
+            }
+        }
+    }
+    return persistenciaEliminarRepuesto(idRepuesto);
+}
+/*por si acaso
 //==========================================
 //       CAPA DE LOGICA: ORDENES
 //==========================================
@@ -1467,7 +1505,16 @@ OrdenServicio** listarOrdenesPorVehiculo(SistemaTaller* s, int idVehiculo, int* 
     *cantidad = encontrados;
     return resultados;
 }
+*/ //ojo
 
+
+// ============================================================================
+//         MÓDULO DE MANTENIMIENTO: INTEGRIDAD Y BACKUP (SECCIÓN 7)
+// ============================================================================
+
+
+
+/* ojo
 //=========================
 //      CAPA VISUAL
 //=========================
