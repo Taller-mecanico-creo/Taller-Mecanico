@@ -1985,7 +1985,7 @@ void uiRegistrarMecanico(){
     } else {
         cout << "\nERROR: Datos inválidos (verifique cédula, fecha YYYY-MM-DD y especialidad en MAYÚSCULAS)." << endl;
     }
-    limpiar();
+    pausar();
 }
 
 void uiBuscarMecanicoID(){
@@ -2879,11 +2879,11 @@ void prepoblarDatosIniciales() {
 
 
 int main () {
-    SetConsoleOutputCP(65001);
-
-    //Iniciamos el sistema
-    SistemaTaller miTaller;
-    inicializarSistema(&miTaller, "Autoservicio El Wikiti", "J-12345678-9", "Maracaibo", "0414-1234567");
+    #ifdef _WIN32
+        SetConsoleOutputCP(65001);
+    #endif
+    
+    prepoblarDatosIniciales();
     
     int mayuya = 0;
     int mayuya2 = 0;
@@ -2920,25 +2920,32 @@ int main () {
 
                     switch (mayuya2) {
                         case 1: 
-                            uiRegistrarVehiculo(&miTaller);
+                            uiRegistrarVehiculo();
+                            pausar();
                             break;
                         case 2:
-                            uiBuscarVehiculo(&miTaller);
+                            uiBuscarVehiculo();
+                            pausar();
                             break;
                         case 3:
-                            uiActualizarVehiculos(&miTaller);
+                            uiActualizarVehiculo();
+                            pausar();
                             break;
                         case 4:
-                            uiEliminarVehiculo(&miTaller);
-                            break;  
+                            uiEliminarVehiculo();
+                            pausar();
+                            break;
                         case 5:
-                            uiListarVehiculos(&miTaller);
+                            uiListarVehiculos();
+                            pausar();
                             break;
                         case 6:
-                            mostrarVehiculoIndividual(&miTaller);
+                            mostrarVehiculoIndividual();
+                            pausar();
                             break;
                         case 7:
-                            mostrarListaVehiculosCompleta(&miTaller);
+                            mostrarListaVehiculosCompleta();
+                            pausar();
                             break;
                         case 0:
                             break;
@@ -2968,13 +2975,16 @@ int main () {
 
                     switch (mayuya2) {
                         case 1: 
-                            uiRegistrarMecanico(&miTaller);
+                            uiRegistrarMecanico();
+                            pausar();
                             break;
                         case 2:
-                            uiBuscarMecanicoID(&miTaller);
+                            uiBuscarMecanicoID();
+                            pausar();
                             break;
                         case 3:
-                            uiListarMecanicos(&miTaller);
+                            uiListarMecanicos();
+                            pausar();
                             break;
                         case 0:
                             break;  
@@ -3005,22 +3015,22 @@ int main () {
 
                     switch (mayuya2){
                         case 1:
-                            uiRegistrarRepuesto(&miTaller);
+                            uiRegistrarRepuesto();
                             break;
                         case 2:
-                            uiBuscarRepuesto(&miTaller);
+                            uiBuscarRepuesto();
                             break;
                         case 3:
-                            uiEntradaMercancia(&miTaller);
+                            uiEntradaMercancia();
                             break;
                         case 4:
-                            uiListarRepuestos(&miTaller);
+                            uiListarRepuestos();
                             break;
                         case 5:
-                            uiCambiarPrecioRepuesto(&miTaller);
+                            uiCambiarPrecioRepuesto();
                             break;
                         case 6:
-                            uiEliminarRepuesto(&miTaller);
+                            uiEliminarRepuesto();
                             break;
                         case 0:
                             break;
@@ -3050,25 +3060,25 @@ int main () {
                     
                     switch (mayuya2){
                         case 1:
-                            uiAbrirOrden(&miTaller);
+                            uiAbrirOrden();
                             break; 
                         case 2:
-                            uiAgregarRepuestoOrden(&miTaller);
+                            uiAgregarRepuestoOrden();
                             break;
                         case 3:
-                            uiQuitarRepuestoOrden(&miTaller);
+                            uiQuitarRepuestoOrden();
                             break;
                         case 4:
-                            uiCerrarOrden(&miTaller);
+                            uiCerrarOrden();
                             break;
                         case 5:
-                            uiAnularOrden(&miTaller);
+                            uiAnularOrden();
                             break;
                         case 6:
-                            uiVerDetalleOrden(&miTaller);
+                            uiVerDetalleOrden();
                             break;
                         case 7:
-                            uiListarOrdenes(&miTaller);
+                            uiListarOrdenes();
                             break;
                         case 0:
                             break;
@@ -3089,8 +3099,6 @@ int main () {
             break;
         }
     } while (mayuya != 0);
-
-liberarSistema(&miTaller);
 //miau
 //opcion y opcion2 pasaron a llamarse mayuya por el homenaje a tan hermoso ser
 return 0;
