@@ -636,6 +636,15 @@ void limpiar(){
     #endif
 }
 
+void pausar() {
+    // En pruebas automáticas no bloqueamos con system("pause") ni cin.get()
+    // para evitar consumir entradas del flujo de prueba o colgar en EOF.
+    if (cin.eof()) {
+        return;
+    }
+    cout << endl;
+}
+
 char aMinuscula(char c){
     if(c >= 'A' && c <= 'Z')return c + 32;
     return c;
@@ -659,6 +668,23 @@ bool compararSubcadenaIgnoreCase(const char* nombre, const char* sub){
         if (sub[k] == '\0') return true;
     }
     return false;
+}
+
+void copiarCadenaSegura(char* destino, const char* origen, int maxLen) {
+    if (destino == nullptr || maxLen <= 0) {
+        return;
+    }
+    if (origen == nullptr) {
+        destino[0] = '\0';
+        return;
+    }
+
+    int i = 0;
+    while (origen[i] != '\0' && i < maxLen - 1) {
+        destino[i] = origen[i];
+        i++;
+    }
+    destino[i] = '\0';
 }
 
 bool esCancelar(const char* texto){
@@ -1917,9 +1943,9 @@ void uiListarVehiculos(){
 
     cin.ignore(10000, '\n');
 }
-/* jai papa
+
 //Mecanicos UI
-void menuMecánicos () {
+void menuMecánicos (){
     cout << "╔═══════════════════════════════════════════╗" << endl;
     cout << "║            GESTIÓN DE MECÁNICOS           ║" << endl;
     cout << "╠═══════════════════════════════════════════╣" << endl;
@@ -1932,7 +1958,7 @@ void menuMecánicos () {
     cout << "Seleccione una opcion: ";
 }
 
-void uiRegistrarMecanico(SistemaTaller* s){
+void uiRegistrarMecanico(){
     limpiar();
     cout << "=== REGISTRAR NUEVO MECANICO ===" << endl;
     Mecanico nuevo;
@@ -1962,7 +1988,7 @@ void uiRegistrarMecanico(SistemaTaller* s){
     limpiar();
 }
 
-void uiBuscarMecanicoID(SistemaTaller* s) {
+void uiBuscarMecanicoID(){
     limpiar();
     cout << "=== BUSCAR MECANICO POR ID ===" << endl;
     int id;
@@ -1992,7 +2018,7 @@ void uiBuscarMecanicoID(SistemaTaller* s) {
     pausar();
 }
 
-void uiDarDeBajaMecanico() {
+void uiDarDeBajaMecanico(){
     limpiar();
     cout << "=== DAR DE BAJA MECÁNICO ===" << endl;
     int id;
@@ -2027,7 +2053,6 @@ void uiListarMecanicos(){
     if (listarMecanicos(lista, cantidad, hayMas) == RES_OK){
         cout << "\n=== LISTADO DE MECANICOS (" << cantidad << ") ===" << endl;
         for (int i = 0; i < cantidad; i++){
-            Mecanico* m = lista[i];
             cout << "----------------------------------------" << endl;
             cout << "ID          : #" << lista[i].id << endl;
             cout << "Nombre      : " << lista[i].nombre << (lista[i].eliminado ? " (BAJA)" : "") << endl;
@@ -2088,12 +2113,12 @@ void menuRepuestos () {
 // Funcion auxiliar para mostrar un repuesto individual con su puntero
 void mostrarRepuesto(const Repuesto &r) {
     cout << "----------------------------------------" << endl;
-    cout << " ID           : " << r->id << endl;
-    cout << " Código       : " << r->codigo << endl;
-    cout << " Nombre       : " << r->nombre << endl;
-    cout << " Marca        : " << r->marca << endl;
-    cout << " Precio Unit. : $" << r->precio << endl;
-    cout << " Stock Actual : " << r->stock << " (Mínimo: " << r->stockMinimo << ")";
+    cout << " ID           : " << r.id << endl;
+    cout << " Código       : " << r.codigo << endl;
+    cout << " Nombre       : " << r.nombre << endl;
+    cout << " Marca        : " << r.marca << endl;
+    cout << " Precio Unit. : $" << r.precio << endl;
+    cout << " Stock Actual : " << r.stock << " (Mínimo: " << r.stockMinimo << ")";
 
     // Alerta de bajo stock
     if (r.stock <= r.stockMinimo) {
@@ -2143,7 +2168,7 @@ void uiRegistrarRepuesto() {
     pausar();
 }
 
-void uiBuscarRepuesto(SistemaTaller* s) {
+void uiBuscarRepuesto() {
     limpiar();
     cout << "=== BUSCAR REPUESTO ===" << endl;
     int op = 0;
@@ -2160,15 +2185,15 @@ void uiBuscarRepuesto(SistemaTaller* s) {
 
     switch (op) {
         case 1: {
-            int id;
+            int idBuscado;
             cout << "Ingrese el ID del repuesto: ";
             if (!(cin >> idBuscado)) { cin.clear(); cin.ignore(10000, '\n'); break; }
             cin.ignore(10000, '\n');
             Repuesto r;
-            CodigoResultado res = buscarRepuestoPorID(id, r);
+            CodigoResultado res = buscarRepuestoPorID(idBuscado, r);
             if (res == RES_OK) mostrarRepuesto(r);
-            else if (res == RES_ELIMINADO) cout << "\nAVISO: El repuesto ID #" << id << " fue eliminado." << endl;
-            else cout << "\nERROR: No existe repuesto con ID #" << id << "." << endl;
+            else if (res == RES_ELIMINADO) cout << "\nAVISO: El repuesto ID #" << idBuscado << " fue eliminado." << endl;
+            else cout << "\nERROR: No existe repuesto con ID #" << idBuscado << "." << endl;
             break;
         }
         case 2: {
@@ -2179,7 +2204,7 @@ void uiBuscarRepuesto(SistemaTaller* s) {
 
             Repuesto r;
             if (buscarRepuestoPorCodigo(codigoBuscado, r) == RES_OK) mostrarRepuesto(r);
-            else cout << "\nERROR: No se encontró repuesto activo con código '" << cod << "'." << endl;
+            else cout << "\nERROR: No se encontró repuesto activo con código '" << codigoBuscado << "'." << endl;
             break;
         }
         case 3: {
@@ -2207,7 +2232,7 @@ void uiBuscarRepuesto(SistemaTaller* s) {
     pausar();
 }
 
-void uiEntradaMercancia(SistemaTaller* s) {
+void uiEntradaMercancia() {
     limpiar();
     cout << "=== REGISTRAR ENTRADA DE MERCANCÍA ===" << endl;
     int id, cantidad;
@@ -2223,7 +2248,7 @@ void uiEntradaMercancia(SistemaTaller* s) {
     cin.ignore(10000, '\n');
 
     int nuevoStock = 0;
-    CodigoResultado res = registrarEntradaMercancia(id, cant, nuevoStock);
+    CodigoResultado res = registrarEntradaMercancia(id, cantidad, nuevoStock);
     if (res == RES_OK) {
         cout << "\n✓ Entrada registrada en disco. Nuevo stock: " << nuevoStock << " unidades." << endl;
     } else if (res == RES_ELIMINADO) {
@@ -2294,7 +2319,7 @@ void uiEliminarRepuesto() {
     }
     pausar();
 }
-*/
+
 //Ordenes UI
 
 void menuÓrdenes (){
@@ -2561,7 +2586,7 @@ void uiAnularOrden(){
     mostrarMensajeResultadoOrden(res, "Orden anulada y stock devuelto al inventario.");
 }
 
-void uiVerDetalleOrden(){
+void uiVerDetalleOrden() {
     limpiar();
     cout << "=== VER DETALLE ORDEN ===" << endl;
     int idO = 0;
@@ -2635,7 +2660,7 @@ void uiVerDetalleOrden(){
     cout << "------------------------------------------------------------" << endl;
 }
 
-void uiListarOrdenes(){
+void uiListarOrdenes() {
     limpiar();
     cout << "=== LISTAR ORDENES ===" << endl;
     cout << "1. Listar por Estado (ABIERTA, CERRADA, ANULADA)" << endl;
@@ -2691,15 +2716,167 @@ void uiListarOrdenes(){
             if (hayMas) {
                 cout << "[AVISO] Existen mas ordenes registradas (limite de " << MAX_RESULTADOS << " por consulta)." << endl;
             }
-            break;
-        }default:{
-            cin.ignore(10000, '\n');
-            cout << "\nOpcion inválida." << endl;
-            break;
+        } else {
+            mostrarMensajeResultadoOrden(res, "");
         }
-    } 
-    limpiar();
+    } else {
+        cin.ignore(10000, '\n');
+        cout << "\nOpcion invalida." << endl;
+    }
 }
+
+// ==================================================
+//     PRE-POBLADO AUTOMÁTICO DE DATOS INICIALES 
+// ==================================================
+
+void prepoblarDatosIniciales() {
+    // Si ya hay vehículos guardados en disco, no volvemos a pre-poblar
+    if (persistenciaObtenerTotalRegistros(RUTA_VEHICULOS) > 0) {
+        return;
+    }
+
+    // Datos del Taller (si no existe taller.bin)
+    if (!existeArchivoTaller()) {
+        Taller t;
+        copiarCadenaSegura(t.nombre,    "Autoservicio El Wikiti", 100);
+        copiarCadenaSegura(t.rif,       "J-12345678-9", 20);
+        copiarCadenaSegura(t.direccion, "Av. Bella Vista, Maracaibo", 200);
+        copiarCadenaSegura(t.telefono,  "0414-1234567", 20);
+        guardarTaller(t);
+    }
+
+    int idTemp = 0;
+
+    // Registrar 8 Vehículos
+    const char* placas[8] = {"AB123CD", "XY987ZW", "CD456EF", "GH789IJ", "KL012MN", "OP345QR", "ST678UV", "WX901YZ"};
+    const char* marcas[8] = {"Toyota", "Chevrolet", "Ford", "Mazda", "Hyundai", "Nissan", "Honda", "Kia"};
+    const char* modelos[8] = {"Corolla", "Aveo", "Fiesta", "Mazda3", "Elantra", "Sentra", "Civic", "Rio"};
+    int anios[8] = {2015, 2009, 2018, 2019, 2021, 2016, 2014, 2022};
+    int kms[8]   = {44000, 128000, 30000, 50000, 20000, 65000, 89000, 15000};
+    const char* duenos[8] = {"Maria Gonzalez", "Maria Gonzalez", "Carlos Perez", "Luis Gomez", "Ana Rivas", "Pedro Lara", "Sofia Mendoza", "Diego Torres"};
+    const char* cedulas[8] = {"V-12345678", "V-12345678", "V-87654321", "V-22334455", "V-33445566", "V-19283746", "V-25678901", "V-28901234"};
+    const char* telefonos[8] = {"0414-1112233", "0414-1112233", "0412-9998877", "0416-5554433", "0424-6667788", "0414-0001122", "0412-3334455", "0424-7778899"};
+
+    for (int i = 0; i < 8; i++) {
+        Vehiculo v;
+        copiarCadenaSegura(v.placa, placas[i], 10);
+        copiarCadenaSegura(v.marca, marcas[i], 50);
+        copiarCadenaSegura(v.modelo, modelos[i], 50);
+        v.anio        = anios[i];
+        v.kilometraje = kms[i];
+        copiarCadenaSegura(v.nombrePropietario, duenos[i], 100);
+        copiarCadenaSegura(v.cedulaPropietario, cedulas[i], 20);
+        copiarCadenaSegura(v.telefonoPropietario, telefonos[i], 20);
+        agregarVehiculo(v, idTemp);
+    }
+
+    // Registrar 4 Mecánicos (El #4 será dado de baja después de sus órdenes cerradas)
+    const char* nomMec[4] = {"Jose Perez", "Ana Villalobos", "Marco Delgado", "Luis Fuenmayor"};
+    const char* cedMec[4] = {"V-11223344", "V-14556677", "V-16889900", "V-13445566"};
+    const char* espMec[4] = {"FRENOS", "MOTOR", "ELECTRICIDAD", "SUSPENSION"};
+    const char* fecMec[4] = {"2023-02-10", "2024-05-15", "2024-08-20", "2022-11-01"};
+
+    for (int i = 0; i < 4; i++) {
+        Mecanico m;
+        copiarCadenaSegura(m.nombre, nomMec[i], 100);
+        copiarCadenaSegura(m.cedula, cedMec[i], 20);
+        copiarCadenaSegura(m.especialidad, espMec[i], 20);
+        copiarCadenaSegura(m.fechaIngreso, fecMec[i], 11);
+        registrarMecanico(m, idTemp);
+    }
+
+    // Registrar 12 Repuestos (Incluye variedad de precios y algunos con bajo stock)
+    const char* codRep[12] = {"FRN-001", "FRN-014", "MOT-002", "MOT-009", "ELE-005", "SUS-010",
+                              "MOT-015", "FRN-020", "ELE-012", "SUS-018", "GEN-001", "GEN-008"};
+    const char* nomRep[12] = {"Pastillas de freno", "Liquido de frenos DOT4", "Filtro de aceite", "Bujia de encendido",
+                              "Bateria 12V", "Amortiguador delantero", "Correa de tiempo", "Disco de freno",
+                              "Bombillo LED H4", "Rotula de suspension", "Aceite sintetico 5W30", "Filtro de aire"};
+    const char* marRep[12] = {"Bosch", "Wagner", "Mann", "NGK", "Duncan", "Monroe",
+                              "Gates", "Brembo", "Philips", "Moog", "Castrol", "Fram"};
+    float preRep[12] = {25.00f, 12.50f, 10.00f, 5.00f, 85.00f, 45.00f, 35.00f, 40.00f, 15.00f, 22.00f, 14.00f, 11.00f};
+    int stkRep[12]   = {20, 15, 25, 40, 6, 12, 10, 14, 18, 10, 30, 5};
+    int minRep[12]   = {5,  5,  5,  8,  4, 4,  3,  4,  5,  3,  6,  5};
+
+    for (int i = 0; i < 12; i++) {
+        Repuesto r;
+        copiarCadenaSegura(r.codigo, codRep[i], 20);
+        copiarCadenaSegura(r.nombre, nomRep[i], 100);
+        copiarCadenaSegura(r.marca,  marRep[i], 50);
+        r.precio      = preRep[i];
+        r.stock       = stkRep[i];
+        r.stockMinimo = minRep[i];
+        registrarRepuesto(r, idTemp);
+    }
+
+    // Crear 10 Órdenes en los 3 estados (3 de ellas con 4 o más líneas)
+    int idOrd = 0;
+
+    // Orden #1 (CERRADA - 4 líneas) - Vehículo 1, Mecánico 1
+    abrirOrden(1, 1, "2026-10-05", "Mantenimiento preventivo y frenos", 44500, idOrd);
+    agregarRepuestoAOrden(idOrd, 1, 2);
+    agregarRepuestoAOrden(idOrd, 2, 1);
+    agregarRepuestoAOrden(idOrd, 3, 1);
+    agregarRepuestoAOrden(idOrd, 4, 4);
+    cerrarOrden(idOrd, 45.00f, "2026-10-06");
+
+    // Orden #2 (CERRADA - 4 líneas) - Vehículo 2, Mecánico 2
+    abrirOrden(2, 2, "2026-10-08", "Servicio mayor de motor y suspension", 128500, idOrd);
+    agregarRepuestoAOrden(idOrd, 5, 1);
+    agregarRepuestoAOrden(idOrd, 6, 2);
+    agregarRepuestoAOrden(idOrd, 7, 1);
+    agregarRepuestoAOrden(idOrd, 8, 2);
+    cerrarOrden(idOrd, 80.00f, "2026-10-10");
+
+    // Orden #3 (CERRADA - 5 líneas) - Vehículo 3, Mecánico 3
+    abrirOrden(3, 3, "2026-10-12", "Revision electrica y afinacion", 30500, idOrd);
+    agregarRepuestoAOrden(idOrd, 1, 1);
+    agregarRepuestoAOrden(idOrd, 3, 1);
+    agregarRepuestoAOrden(idOrd, 9, 2);
+    agregarRepuestoAOrden(idOrd, 10, 2);
+    agregarRepuestoAOrden(idOrd, 11, 4);
+    cerrarOrden(idOrd, 60.00f, "2026-10-13");
+
+    // Orden #4 (CERRADA - 2 líneas) - Vehículo 4, Mecánico 4 (antes de su baja)
+    abrirOrden(4, 4, "2026-10-14", "Cambio de filtros y liquido de frenos", 50400, idOrd);
+    agregarRepuestoAOrden(idOrd, 2, 1);
+    agregarRepuestoAOrden(idOrd, 12, 1);
+    cerrarOrden(idOrd, 30.00f, "2026-10-15");
+
+    // Orden #5 (CERRADA - 2 líneas) - Vehículo 5, Mecánico 4 (antes de su baja)
+    abrirOrden(5, 4, "2026-10-16", "Revision de bujias y amortiguadores", 20500, idOrd);
+    agregarRepuestoAOrden(idOrd, 4, 4);
+    agregarRepuestoAOrden(idOrd, 6, 2);
+    cerrarOrden(idOrd, 50.00f, "2026-10-17");
+
+    // Damos de baja al Mecánico #4 (ahora tiene 0 órdenes abiertas y 2 cerradas)
+    DarDeBajaMecanico(4);
+
+    // Orden #6 (ANULADA - 2 líneas) - Vehículo 6, Mecánico 1
+    abrirOrden(6, 1, "2026-10-18", "Presupuesto de frenos y bateria", 65200, idOrd);
+    agregarRepuestoAOrden(idOrd, 1, 2);
+    agregarRepuestoAOrden(idOrd, 5, 1);
+    anularOrden(idOrd);
+
+    // Orden #7 (ANULADA - 1 línea) - Vehículo 7, Mecánico 2
+    abrirOrden(7, 2, "2026-10-19", "Cambio de filtro cancelado por cliente", 89300, idOrd);
+    agregarRepuestoAOrden(idOrd, 3, 2);
+    anularOrden(idOrd);
+
+    // Orden #8 (ABIERTA - 2 líneas) - Vehículo 1, Mecánico 1
+    abrirOrden(8, 1, "2026-11-15", "Ruido en correa y luces delanteras", 45100, idOrd);
+    agregarRepuestoAOrden(idOrd, 7, 1);
+    agregarRepuestoAOrden(idOrd, 9, 2);
+
+    // Orden #9 (ABIERTA - 2 líneas) - Vehículo 2, Mecánico 2
+    abrirOrden(2, 2, "2026-11-16", "Vibracion al frenar en carretera", 129100, idOrd);
+    agregarRepuestoAOrden(idOrd, 8, 2);
+    agregarRepuestoAOrden(idOrd, 10, 1);
+
+    // Orden #10 (ABIERTA - 1 línea) - Vehículo 8, Mecánico 3
+    abrirOrden(8, 3, "2026-11-18", "Mantenimiento de los 15.000 km", 15500, idOrd);
+    agregarRepuestoAOrden(idOrd, 11, 4);
+}
+
 
 int main () {
     SetConsoleOutputCP(65001);
@@ -2918,4 +3095,3 @@ liberarSistema(&miTaller);
 //opcion y opcion2 pasaron a llamarse mayuya por el homenaje a tan hermoso ser
 return 0;
 }
-*/
