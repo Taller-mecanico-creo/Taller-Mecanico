@@ -1129,7 +1129,7 @@ CodigoResultado cambiarPrecioRepuesto(int idRepuesto, float nuevoPrecio){
     return persistenciaSobrescribirRepuesto(r);
 }
 
-CodigoResultado eliminarRepuesto(int idRepuesto){
+CodigoResultado eliminarRepuesto(int idRepuesto) {
     Repuesto r;
     CodigoResultado res = buscarRepuestoPorID(idRepuesto, r);
     if (res != RES_OK) return res;
@@ -1527,11 +1527,6 @@ CodigoResultado listarOrdenesPorVehiculo(int idVehiculo, OrdenServicio resultado
     return (cantidad > 0) ? RES_OK : RES_NO_EXISTE;
 }
 
-// ============================================================================
-//         MÓDULO DE MANTENIMIENTO: INTEGRIDAD Y BACKUP (SECCIÓN 7)
-// ============================================================================
-
-
 
 /* ojo
 //=========================
@@ -1880,7 +1875,8 @@ void menuMecánicos () {
     cout << "╠═══════════════════════════════════════════╣" << endl;
     cout << "║ 1. Registrar mecánico                     ║" << endl;
     cout << "║ 2. Buscar por ID                          ║" << endl;
-    cout << "║ 3. Listar todos los mecánicos             ║" << endl;
+    cout << "║ 3. Listar todos (activos y de baja)       ║" << endl;
+    cout << "║ 4. Dar de baja mecánico                   ║" << endl;
     cout << "║ 0. Volver al menú principal               ║" << endl;
     cout << "╚═══════════════════════════════════════════╝" << endl;
     cout << "Seleccione una opcion: ";
@@ -1898,22 +1894,30 @@ void uiRegistrarMecanico(SistemaTaller* s){
     cout << "Especialidad (MOTOR, FRENOS, ELECTRICIDAD, SUSPENSION, GENERAL): "; cin >> nuevo.especialidad;
     cout << "Fecha de Ingreso (YYYY-MM-DD): "; cin >> nuevo.fechaIngreso;
 
-    if (registrarMecanico(s, nuevo) != nullptr) {
-        cout << "\nMecanico registrado exitosamente con ID asignado!" << endl;
-    } else {
-        cout << "\nERROR: No se pudo registrar el mecanico." << endl;
+    if (!pedirConfirmacion("\n¿Confirmar registro del mecánico?")) {
+        cout << "\nRegistro cancelado." << endl;
+        cin.ignore(10000, '\n'); pausar(); return;
     }
     cin.ignore(10000, '\n');
+
+    int idAsignado = 0;
+    CodigoResultado res = registrarMecanico(nuevo, idAsignado);
+    if (res == RES_OK) {
+        cout << "\n✓ Mecánico '" << nuevo.nombre << "' registrado exitosamente con ID #" << idAsignado << "." << endl;
+    } else if (res == RES_DUPLICADO) {
+        cout << "\nERROR: Ya existe un mecánico activo con esa cédula." << endl;
+    } else {
+        cout << "\nERROR: Datos inválidos (verifique cédula, fecha YYYY-MM-DD y especialidad en MAYÚSCULAS)." << endl;
+    }
     limpiar();
 }
 
 void uiBuscarMecanicoID(SistemaTaller* s) {
     limpiar();
     cout << "=== BUSCAR MECANICO POR ID ===" << endl;
-    int idBuscado;
-
-    cout << "Ingrese un ID registrado: ";
-    if (!(cin >> idBuscado)){
+    int id;
+    cout << "Ingrese el ID del mecánico: ";
+    if (!(cin >> id)){
         cin.clear();
         cin.ignore(10000, '\n');
         return;
@@ -1922,43 +1926,97 @@ void uiBuscarMecanicoID(SistemaTaller* s) {
     // Limpiamos el búfer despues de cin para evitar errores
     cin.ignore(10000, '\n');
     
-    Mecanico* ubicado = buscarMecanicoPorID(s, idBuscado);
-    if (ubicado != nullptr) {
-    cout << "\n--- MECANICO ENCONTRADO ---" << endl;
-    cout << "ID          : " << ubicado->id << endl;
-    cout << "Nombre      : " << ubicado->nombre << endl;
-    cout << "Cedula      : " << ubicado->cedula << endl;
-    cout << "Especialidad: " << ubicado->especialidad << endl;
-    cout << "Ordenes Ab. : " << contarOrdenesAbiertasMecanico(s, ubicado->id) << endl;
+    Mecanico m;
+    CodigoResultado res = ObtenerMecanicoPorID(id, m);
+    if (res == RES_OK || res == RES_ELIMINADO) {
+        cout << "\n--- MECÁNICO ENCONTRADO ---" << endl;
+        cout << "ID          : #" << m.id << endl;
+        cout << "Nombre      : " << m.nombre << (m.eliminado ? " [DADO DE BAJA]" : " [ACTIVO]") << endl;
+        cout << "Cédula      : " << m.cedula << endl;
+        cout << "Especialidad: " << m.especialidad << endl;
+        cout << "Ingreso     : " << m.fechaIngreso << endl;
+        cout << "Órdenes Ab. : " << ContarOrdenesAbiertasMecanico(m.id) << endl;
     } else {
-        cout << "\nMecanico no registrado (sin coincidencias)." << endl;
+        cout << "\nERROR: No existe ningún mecánico con el ID #" << id << "." << endl;
     }
-    limpiar();
+    pausar();
 }
 
-void uiListarMecanicos(SistemaTaller* s){
+void uiDarDeBajaMecanico() {
     limpiar();
-    int cantidad = 0;
-    Mecanico** lista = listarMecanicos(s, &cantidad);
+    cout << "=== DAR DE BAJA MECÁNICO ===" << endl;
+    int id;
+    cout << "Ingrese el ID del mecánico a dar de baja: ";
+    if (!(cin >> id)) { cin.clear(); cin.ignore(10000, '\n'); return; }
 
-    if (lista != nullptr){
+    if (!pedirConfirmacion("\n¿Confirmar la baja del mecánico?")) {
+        cout << "\nOperación cancelada." << endl;
+        cin.ignore(10000, '\n'); pausar(); return;
+    }
+    cin.ignore(10000, '\n');
+
+    CodigoResultado res = DarDeBajaMecanico(id);
+    if (res == RES_OK) {
+        cout << "\n✓ Mecánico dado de baja exitosamente. Su historial en órdenes cerradas se conserva." << endl;
+    } else if (res == RES_TIENE_RELACIONES) {
+        cout << "\nERROR: El mecánico tiene órdenes ABIERTAS y no puede darse de baja hasta cerrarlas." << endl;
+    } else if (res == RES_ELIMINADO) {
+        cout << "\nAVISO: Ese mecánico ya se encontraba dado de baja." << endl;
+    } else {
+        cout << "\nERROR: No existe ningún mecánico con el ID #" << id << "." << endl;
+    }
+    pausar();
+}
+
+void uiListarMecanicos(){
+    limpiar();
+    Mecanico lista[MAX_RESULTADOS];
+    int cantidad = 0;
+    bool hayMas  = false;
+
+    if (listarMecanicos(lista, cantidad, hayMas) == RES_OK){
         cout << "\n=== LISTADO DE MECANICOS (" << cantidad << ") ===" << endl;
         for (int i = 0; i < cantidad; i++){
             Mecanico* m = lista[i];
             cout << "----------------------------------------" << endl;
-            cout << "ID          : " << m->id << endl;
-            cout << "Nombre      : " << m->nombre << endl;
-            cout << "Cedula      : " << m->cedula << endl;
-            cout << "Especialidad: " << m->especialidad << endl;
-            cout << "Ordenes Ab. : " << contarOrdenesAbiertasMecanico(s, m->id) << endl;
+            cout << "ID          : #" << lista[i].id << endl;
+            cout << "Nombre      : " << lista[i].nombre << (lista[i].eliminado ? " (BAJA)" : "") << endl;
+            cout << "Cédula      : " << lista[i].cedula << endl;
+            cout << "Especialidad: " << lista[i].especialidad << endl;
+            cout << "Órdenes Ab. : " << ContarOrdenesAbiertasMecanico(lista[i].id) << endl;
         }
-        cout << "----------------------------------------" << endl;
-        delete[] lista;
-    } else{
-        cout << "\nNo hay mecanicos registrados." << endl;
+        if (hayMas) cout << "\n[!] Hay más mecánicos en disco (mostrando los primeros " << MAX_RESULTADOS << ")." << endl;
+    } else {
+        cout << "\nNo hay mecánicos registrados en el sistema." << endl;
     }
     cin.ignore(10000, '\n');
+    pausar();
+}
+
+void uiDarDeBajaMecanico() {
     limpiar();
+    cout << "=== DAR DE BAJA MECÁNICO ===" << endl;
+    int id;
+    cout << "Ingrese el ID del mecánico a dar de baja: ";
+    if (!(cin >> id)) { cin.clear(); cin.ignore(10000, '\n'); return; }
+
+    if (!pedirConfirmacion("\n¿Confirmar la baja del mecánico?")) {
+        cout << "\nOperación cancelada." << endl;
+        cin.ignore(10000, '\n'); pausar(); return;
+    }
+    cin.ignore(10000, '\n');
+
+    CodigoResultado res = DarDeBajaMecanico(id);
+    if (res == RES_OK) {
+        cout << "\n✓ Mecánico dado de baja exitosamente. Su historial en órdenes cerradas se conserva." << endl;
+    } else if (res == RES_TIENE_RELACIONES) {
+        cout << "\nERROR: El mecánico tiene órdenes ABIERTAS y no puede darse de baja hasta cerrarlas." << endl;
+    } else if (res == RES_ELIMINADO) {
+        cout << "\nAVISO: Ese mecánico ya se encontraba dado de baja." << endl;
+    } else {
+        cout << "\nERROR: No existe ningún mecánico con el ID #" << id << "." << endl;
+    }
+    pausar();
 }
 
 //Repuestos UI
@@ -1978,8 +2036,7 @@ void menuRepuestos () {
 }
 
 // Funcion auxiliar para mostrar un repuesto individual con su puntero
-void mostrarRepuesto(Repuesto* r) {
-    if (r == nullptr) return;
+void mostrarRepuesto(const Repuesto &r) {
     cout << "----------------------------------------" << endl;
     cout << " ID           : " << r->id << endl;
     cout << " Código       : " << r->codigo << endl;
@@ -1989,32 +2046,18 @@ void mostrarRepuesto(Repuesto* r) {
     cout << " Stock Actual : " << r->stock << " (Mínimo: " << r->stockMinimo << ")";
 
     // Alerta de bajo stock
-    if (r->stock <= r->stockMinimo) {
+    if (r.stock <= r.stockMinimo) {
         cout << " <-- [ALERTA: BAJO STOCK]";
     }
     cout << endl;
-    cout << " Registro     : " << r->fechaRegistro << endl;
-}
-// Funcion auxiliar para mostrar un arreglo de punteros a repuestos
-void mostrarListaRepuestos(Repuesto** repuestos, int cantidad) {
-    if (repuestos == nullptr || cantidad <= 0) {
-        cout << "\n No hay repuestos para mostrar." << endl;
-        return;
-    }
-    cout << "\n=== LISTADO DE REPUESTOS (" << cantidad <<") ===" << endl;
-    for (int i = 0; i < cantidad; i++) {
-        mostrarRepuesto(repuestos[i]);
-    }
-    cout << "----------------------------------------" << endl;
-    cout << "Total de repuestos mostrados: " << cantidad << endl;
 }
 
-void uiRegistrarRepuesto(SistemaTaller* s) {
+void uiRegistrarRepuesto() {
     limpiar();
     cout << "=== REGISTRAR NUEVO REPUESTO ===" << endl;
     Repuesto nuevo;
 
-    cout << "Código (único, sin espacios, ej. FRN-001): ";
+    cout << "Código (único, sin espacios): ";
     cin >> nuevo.codigo;
 
     // Limpiamos el salto de linea para leer nombres con espacios
@@ -2032,23 +2075,22 @@ void uiRegistrarRepuesto(SistemaTaller* s) {
     cout << "Stock mínimo para alerta (>= 0): "; 
     if (!(cin >> nuevo.stockMinimo)) { cin.clear(); cin.ignore(10000, '\n'); nuevo.stockMinimo = -1; }
     
-    cout << "Fecha de registro (YYYY-MM-DD): "; cin >> nuevo.fechaRegistro;
+    if (!pedirConfirmacion("\n¿Confirmar registro del repuesto?")) {
+        cout << "\nRegistro cancelado." << endl;
+        cin.ignore(10000, '\n'); pausar(); return;
+    }
     cin.ignore(10000, '\n');
 
-    // Verificamos si el código ya existe para dar un mensaje de error
-    if (buscarRepuestoPorCodigo(s, nuevo.codigo) != nullptr) {
-        cout << "\nERROR: El código de repuesto '" << nuevo.codigo << "' ya está registrado." << endl;
-        limpiar();
-        return;
-    }
-
-    Repuesto* creado = registrarRepuesto(s, nuevo);
-    if (creado != nullptr) {
-        cout << "\nRepuesto '" << creado->nombre << "' registrado exitosamente con ID #" << creado->id << endl;
+    int idAsignado = 0;
+    CodigoResultado res = registrarRepuesto(nuevo, idAsignado);
+    if (res == RES_OK) {
+        cout << "\n✓ Repuesto '" << nuevo.nombre << "' registrado con ID #" << idAsignado << "." << endl;
+    } else if (res == RES_DUPLICADO) {
+        cout << "\nERROR: El código '" << nuevo.codigo << "' ya existe en el inventario activo." << endl;
     } else {
-        cout << "\nERROR: No se pudo registrar el repuesto (verifique precio, stock y campos no vacíos)." << endl;
+        cout << "\nERROR: Datos inválidos (verifique precio > 0 y stock >= 0)." << endl;
     }
-    limpiar();
+    pausar();
 }
 
 void uiBuscarRepuesto(SistemaTaller* s) {
@@ -2068,18 +2110,15 @@ void uiBuscarRepuesto(SistemaTaller* s) {
 
     switch (op) {
         case 1: {
-            int idBuscado;
+            int id;
             cout << "Ingrese el ID del repuesto: ";
             if (!(cin >> idBuscado)) { cin.clear(); cin.ignore(10000, '\n'); break; }
             cin.ignore(10000, '\n');
-
-            Repuesto* ubicado = buscarRepuestoPorID (s, idBuscado);
-            if (ubicado != nullptr) {
-                cout << "\n¡Repuesto encontrado!" << endl;
-                mostrarRepuesto(ubicado);
-            } else {
-                cout << "\nERROR: No existe ningún repuesto con el ID #" << idBuscado << "." << endl;
-            }
+            Repuesto r;
+            CodigoResultado res = buscarRepuestoPorID(id, r);
+            if (res == RES_OK) mostrarRepuesto(r);
+            else if (res == RES_ELIMINADO) cout << "\nAVISO: El repuesto ID #" << id << " fue eliminado." << endl;
+            else cout << "\nERROR: No existe repuesto con ID #" << id << "." << endl;
             break;
         }
         case 2: {
@@ -2088,29 +2127,24 @@ void uiBuscarRepuesto(SistemaTaller* s) {
             cin >> codigoBuscado;
             cin.ignore(10000, '\n');
 
-            Repuesto* ubicado = buscarRepuestoPorCodigo(s, codigoBuscado);
-            if (ubicado != nullptr) {
-                cout << "\n¡Repuesto encontrado!" << endl;
-                mostrarRepuesto(ubicado);
-            } else {
-                cout << "\nERROR: No se encontró ningún repuesto con el código '" << codigoBuscado << "'." << endl;
-            }
+            Repuesto r;
+            if (buscarRepuestoPorCodigo(codigoBuscado, r) == RES_OK) mostrarRepuesto(r);
+            else cout << "\nERROR: No se encontró repuesto activo con código '" << cod << "'." << endl;
             break;
         }
         case 3: {
-            char subcadena[100];
+            char sub[100];
             cin.ignore(10000, '\n');
             cout << "Ingrese parte del nombre del repuesto: ";
-            cin.getline(subcadena, 100);
+            cin.getline(sub, 100);
 
-            int cantidad = 0;
-            Repuesto** resultados = buscarRepuestosPorNombreParcial(s, subcadena, &cantidad);
-            if (resultados != nullptr) {
-                mostrarListaRepuestos(resultados, cantidad);
-                // Regla de memoria: liberamos el arreglo temporal de punteros
-                delete[] resultados;
+            Repuesto resLista[MAX_RESULTADOS];
+            int cant = 0; bool hayMas = false;
+            if (buscarRepuestosPorNombreParcial(sub, resLista, cant, hayMas) == RES_OK) {
+                for (int i = 0; i < cant; i++) mostrarRepuesto(resLista[i]);
+                if (hayMas) cout << "\n[!] Hay más coincidencias en disco." << endl;
             } else {
-                cout << "\nNo se encontraron repuestos que coincidan con '" << subcadena << "'." << endl;
+                cout << "\nNo se encontraron repuestos con ese nombre." << endl;
             }
             break;
         }
@@ -2120,110 +2154,95 @@ void uiBuscarRepuesto(SistemaTaller* s) {
             break;
         }
     }
-    limpiar();
+    pausar();
 }
 
 void uiEntradaMercancia(SistemaTaller* s) {
     limpiar();
     cout << "=== REGISTRAR ENTRADA DE MERCANCÍA ===" << endl;
-    int idRepuesto, cantidad;
+    int id, cantidad;
 
     cout << "Ingrese el ID del repuesto: ";
-    if (!(cin >> idRepuesto)){
+    if (!(cin >> id)){
         cin.clear();
         cin.ignore(10000, '\n');
         return;
     }
-
-    Repuesto* rep = buscarRepuestoPorID(s, idRepuesto);
-    if (rep == nullptr) {
-        cin.ignore(10000, '\n');
-        cout << "\nERROR: No existe un repuesto con el ID #" << idRepuesto << "." << endl;
-        limpiar();
-        return;
-    }   
-    cout << "Repuesto seleccionado: " << rep->nombre << " (Stock actual: " << rep->stock << ")" << endl;
     cout << "Ingrese la cantidad de unidades que ingresan (> 0): ";
     if (!(cin >> cantidad)) { cin.clear(); cin.ignore(10000, '\n'); return; }
     cin.ignore(10000, '\n');
 
-    if (registrarEntradaMercancia(s, idRepuesto, cantidad)) {
-        cout << "\n¡Entrada registrada! Nuevo stock de '" << rep->nombre << "': " << rep->stock << "unidades." << endl;
-    } else { 
-        cout << "\nERROR: La cantidad a ingresar debe ser mayor a 0." << endl;
+    int nuevoStock = 0;
+    CodigoResultado res = registrarEntradaMercancia(id, cant, nuevoStock);
+    if (res == RES_OK) {
+        cout << "\n✓ Entrada registrada en disco. Nuevo stock: " << nuevoStock << " unidades." << endl;
+    } else if (res == RES_ELIMINADO) {
+        cout << "\nERROR: El repuesto fue eliminado." << endl;
+    } else if (res == RES_NO_EXISTE) {
+        cout << "\nERROR: No existe un repuesto con ID #" << id << "." << endl;
+    } else {
+        cout << "\nERROR: La cantidad debe ser mayor a 0." << endl;
     }
-    limpiar();
+    pausar();
 }
 
-void uiListarRepuestos(SistemaTaller* s) {
+void uiListarRepuestos() {
     limpiar();
-    int cantidad = 0;
-    Repuesto** lista = listarRepuestos(s, &cantidad);
+    Repuesto lista[MAX_RESULTADOS];
+    int cant = 0; bool hayMas = false;
 
-    if (lista != nullptr) {
-        mostrarListaRepuestos(lista, cantidad);
-        // Liberamos el arreglo de ptrs retornado por la lógica
-        delete[] lista;
+    if (listarRepuestosActivos(lista, cant, hayMas) == RES_OK) {
+        cout << "=== INVENTARIO DE REPUESTOS (" << cant << ") ===" << endl;
+        for (int i = 0; i < cant; i++) mostrarRepuesto(lista[i]);
+        if (hayMas) cout << "\n[!] Hay más repuestos en disco (mostrando los primeros " << MAX_RESULTADOS << ")." << endl;
     } else {
-        cout << "\nNo hay repuestos registrados en el inventario." << endl;
+        cout << "\nNo hay repuestos activos en el inventario." << endl;
     }
     cin.ignore(10000, '\n');
-    limpiar();
+    pausar();
 }
 
-void uiCambiarPrecioRepuesto(SistemaTaller* s) {
+void uiCambiarPrecioRepuesto() {
     limpiar();
     cout << "=== CAMBIAR PRECIO DE REPUESTO ===" << endl;
-    int idRepuesto;
-    float nuevoPrecio;
-
-    cout << "Ingrese el ID del repuesto: ";
-    if (!(cin >> idRepuesto)) { cin.clear(); cin.ignore(10000, '\n'); return; }
-
-    Repuesto* rep = buscarRepuestoPorID(s, idRepuesto);
-    if (rep == nullptr) {
-        cin.ignore(10000, '\n');
-        cout <<"\nERROR: No existe un repuesto con el ID #" << idRepuesto << "." << endl;
-        limpiar();
-        return;
-    }
-
-    cout << "Repuesto: " << rep->nombre << " | Precio actual: $" << rep->precio << "." << endl;
-    cout << "Ingrese el nuevo precio unitario (> 0): ";
-    if (!(cin >> nuevoPrecio)) { cin.clear(); cin.ignore(10000, '\n'); return; }
+    int id; float precio;
+    cout << "ID del repuesto: ";
+    if (!(cin >> id)) { cin.clear(); cin.ignore(10000, '\n'); return; }
+    cout << "Nuevo precio (> 0): ";
+    if (!(cin >> precio)) { cin.clear(); cin.ignore(10000, '\n'); return; }
     cin.ignore(10000, '\n');
 
-    if (cambiarPrecioRepuesto(s, idRepuesto, nuevoPrecio)) {
-        cout << "\nPrecio actualizado exitosamente a $" << rep->precio  << "." << endl;
-        cout << "(Nota: Las órdenes registradas previamente mantienen su precio histórico)." << endl;
+    CodigoResultado res = cambiarPrecioRepuesto(id, precio);
+    if (res == RES_OK) {
+        cout << "\n✓ Precio actualizado en disco a $" << precio << " (no afecta órdenes históricas)." << endl;
     } else {
-        cout << "\nERRROR: El precio debe ser mayor o igual a 0." << endl;
+        cout << "\nERROR: Verifique que el repuesto exista, esté activo y el precio sea > 0." << endl;
     }
-    limpiar();
+    pausar();
 }
 
-void uiEliminarRepuesto(SistemaTaller* s) {
+void uiEliminarRepuesto() {
     limpiar();
-    cout << "=== ELIMINAR REPUESTO ===" << endl;
-    int idRepuesto;
+    cout << "=== ELIMINAR REPUESTO (BORRADO LÓGICO) ===" << endl;
+    int id;
+    cout << "ID del repuesto a eliminar: ";
+    if (!(cin >> id)) { cin.clear(); cin.ignore(10000, '\n'); return; }
 
-    cout << "Ingrese el ID del repuesto a eliminar: ";
-    if (!(cin >> idRepuesto)) { cin.clear(); cin.ignore(10000, '\n'); return; }
+    if (!pedirConfirmacion("\n¿Confirmar eliminación del repuesto?")) {
+        cout << "\nOperación cancelada." << endl;
+        cin.ignore(10000, '\n'); pausar(); return;
+    }
     cin.ignore(10000, '\n');
 
-    Repuesto* rep = buscarRepuestoPorID(s, idRepuesto);
-    if (rep == nullptr) {
-        cout << "\nERROR: No existe ningún repuesto con el ID #" << idRepuesto << "." << endl;
-        limpiar();
-        return;
-    }
-
-    if (eliminarRepuesto(s, idRepuesto)) {
-        cout << "\nRepuesto eliminado del inventario." << endl;
+    CodigoResultado res = eliminarRepuesto(id);
+    if (res == RES_OK) {
+        cout << "\n✓ Repuesto marcado como eliminado lógicamente." << endl;
+    } else if (res == RES_TIENE_RELACIONES) {
+        cout << "\nERROR: El repuesto figura en el detalle de una o más órdenes y no puede eliminarse." << endl;
     } else {
-        cout << "\nERROR: El repuesto '" << rep->nombre << "' está registrado en una o más órdenes de servicio y no puede eliminarse." << endl;
+        cout << "\nERROR: El repuesto no existe o ya fue eliminado." << endl;
     }
-    limpiar();
+    pausar();
 }
 
 //Ordenes UI
@@ -2573,6 +2592,158 @@ void uiListarOrdenes(SistemaTaller *s){
         }
     } 
     limpiar();
+}
+
+// ==================================================
+//     PRE-POBLADO AUTOMÁTICO DE DATOS INICIALES 
+// ==================================================
+
+void prepoblarDatosIniciales() {
+    // Si ya hay vehículos guardados en disco, no volvemos a pre-poblar
+    if (persistenciaObtenerTotalRegistros(RUTA_VEHICULOS) > 0) {
+        return;
+    }
+
+    // Datos del Taller (si no existe taller.bin)
+    if (!existeArchivoTaller()) {
+        Taller t;
+        copiarCadenaSegura(t.nombre,    "Autoservicio El Wikiti", 100);
+        copiarCadenaSegura(t.rif,       "J-12345678-9", 20);
+        copiarCadenaSegura(t.direccion, "Av. Bella Vista, Maracaibo", 200);
+        copiarCadenaSegura(t.telefono,  "0414-1234567", 20);
+        guardarTaller(t);
+    }
+
+    int idTemp = 0;
+
+    // Registrar 8 Vehículos
+    const char* placas[8] = {"AB123CD", "XY987ZW", "CD456EF", "GH789IJ", "KL012MN", "OP345QR", "ST678UV", "WX901YZ"};
+    const char* marcas[8] = {"Toyota", "Chevrolet", "Ford", "Mazda", "Hyundai", "Nissan", "Honda", "Kia"};
+    const char* modelos[8] = {"Corolla", "Aveo", "Fiesta", "Mazda3", "Elantra", "Sentra", "Civic", "Rio"};
+    int anios[8] = {2015, 2009, 2018, 2019, 2021, 2016, 2014, 2022};
+    int kms[8]   = {44000, 128000, 30000, 50000, 20000, 65000, 89000, 15000};
+    const char* duenos[8] = {"Maria Gonzalez", "Maria Gonzalez", "Carlos Perez", "Luis Gomez", "Ana Rivas", "Pedro Lara", "Sofia Mendoza", "Diego Torres"};
+    const char* cedulas[8] = {"V-12345678", "V-12345678", "V-87654321", "V-22334455", "V-33445566", "V-19283746", "V-25678901", "V-28901234"};
+    const char* telefonos[8] = {"0414-1112233", "0414-1112233", "0412-9998877", "0416-5554433", "0424-6667788", "0414-0001122", "0412-3334455", "0424-7778899"};
+
+    for (int i = 0; i < 8; i++) {
+        Vehiculo v;
+        copiarCadenaSegura(v.placa, placas[i], 10);
+        copiarCadenaSegura(v.marca, marcas[i], 50);
+        copiarCadenaSegura(v.modelo, modelos[i], 50);
+        v.anio        = anios[i];
+        v.kilometraje = kms[i];
+        copiarCadenaSegura(v.nombrePropietario, duenos[i], 100);
+        copiarCadenaSegura(v.cedulaPropietario, cedulas[i], 20);
+        copiarCadenaSegura(v.telefonoPropietario, telefonos[i], 20);
+        agregarVehiculo(v, idTemp);
+    }
+
+    // Registrar 4 Mecánicos (El #4 será dado de baja después de sus órdenes cerradas)
+    const char* nomMec[4] = {"Jose Perez", "Ana Villalobos", "Marco Delgado", "Luis Fuenmayor"};
+    const char* cedMec[4] = {"V-11223344", "V-14556677", "V-16889900", "V-13445566"};
+    const char* espMec[4] = {"FRENOS", "MOTOR", "ELECTRICIDAD", "SUSPENSION"};
+    const char* fecMec[4] = {"2023-02-10", "2024-05-15", "2024-08-20", "2022-11-01"};
+
+    for (int i = 0; i < 4; i++) {
+        Mecanico m;
+        copiarCadenaSegura(m.nombre, nomMec[i], 100);
+        copiarCadenaSegura(m.cedula, cedMec[i], 20);
+        copiarCadenaSegura(m.especialidad, espMec[i], 20);
+        copiarCadenaSegura(m.fechaIngreso, fecMec[i], 11);
+        registrarMecanico(m, idTemp);
+    }
+
+    // Registrar 12 Repuestos (Incluye variedad de precios y algunos con bajo stock)
+    const char* codRep[12] = {"FRN-001", "FRN-014", "MOT-002", "MOT-009", "ELE-005", "SUS-010",
+                              "MOT-015", "FRN-020", "ELE-012", "SUS-018", "GEN-001", "GEN-008"};
+    const char* nomRep[12] = {"Pastillas de freno", "Liquido de frenos DOT4", "Filtro de aceite", "Bujia de encendido",
+                              "Bateria 12V", "Amortiguador delantero", "Correa de tiempo", "Disco de freno",
+                              "Bombillo LED H4", "Rotula de suspension", "Aceite sintetico 5W30", "Filtro de aire"};
+    const char* marRep[12] = {"Bosch", "Wagner", "Mann", "NGK", "Duncan", "Monroe",
+                              "Gates", "Brembo", "Philips", "Moog", "Castrol", "Fram"};
+    float preRep[12] = {25.00f, 12.50f, 10.00f, 5.00f, 85.00f, 45.00f, 35.00f, 40.00f, 15.00f, 22.00f, 14.00f, 11.00f};
+    int stkRep[12]   = {20, 15, 25, 40, 6, 12, 10, 14, 18, 10, 30, 5};
+    int minRep[12]   = {5,  5,  5,  8,  4, 4,  3,  4,  5,  3,  6,  5};
+
+    for (int i = 0; i < 12; i++) {
+        Repuesto r;
+        copiarCadenaSegura(r.codigo, codRep[i], 20);
+        copiarCadenaSegura(r.nombre, nomRep[i], 100);
+        copiarCadenaSegura(r.marca,  marRep[i], 50);
+        r.precio      = preRep[i];
+        r.stock       = stkRep[i];
+        r.stockMinimo = minRep[i];
+        registrarRepuesto(r, idTemp);
+    }
+
+    // Crear 10 Órdenes en los 3 estados (3 de ellas con 4 o más líneas)
+    int idOrd = 0;
+
+    // Orden #1 (CERRADA - 4 líneas) - Vehículo 1, Mecánico 1
+    abrirOrden(1, 1, "2026-10-05", "Mantenimiento preventivo y frenos", 44500, idOrd);
+    agregarRepuestoAOrden(idOrd, 1, 2);
+    agregarRepuestoAOrden(idOrd, 2, 1);
+    agregarRepuestoAOrden(idOrd, 3, 1);
+    agregarRepuestoAOrden(idOrd, 4, 4);
+    cerrarOrden(idOrd, 45.00f, "2026-10-06");
+
+    // Orden #2 (CERRADA - 4 líneas) - Vehículo 2, Mecánico 2
+    abrirOrden(2, 2, "2026-10-08", "Servicio mayor de motor y suspension", 128500, idOrd);
+    agregarRepuestoAOrden(idOrd, 5, 1);
+    agregarRepuestoAOrden(idOrd, 6, 2);
+    agregarRepuestoAOrden(idOrd, 7, 1);
+    agregarRepuestoAOrden(idOrd, 8, 2);
+    cerrarOrden(idOrd, 80.00f, "2026-10-10");
+
+    // Orden #3 (CERRADA - 5 líneas) - Vehículo 3, Mecánico 3
+    abrirOrden(3, 3, "2026-10-12", "Revision electrica y afinacion", 30500, idOrd);
+    agregarRepuestoAOrden(idOrd, 1, 1);
+    agregarRepuestoAOrden(idOrd, 3, 1);
+    agregarRepuestoAOrden(idOrd, 9, 2);
+    agregarRepuestoAOrden(idOrd, 10, 2);
+    agregarRepuestoAOrden(idOrd, 11, 4);
+    cerrarOrden(idOrd, 60.00f, "2026-10-13");
+
+    // Orden #4 (CERRADA - 2 líneas) - Vehículo 4, Mecánico 4 (antes de su baja)
+    abrirOrden(4, 4, "2026-10-14", "Cambio de filtros y liquido de frenos", 50400, idOrd);
+    agregarRepuestoAOrden(idOrd, 2, 1);
+    agregarRepuestoAOrden(idOrd, 12, 1);
+    cerrarOrden(idOrd, 30.00f, "2026-10-15");
+
+    // Orden #5 (CERRADA - 2 líneas) - Vehículo 5, Mecánico 4 (antes de su baja)
+    abrirOrden(5, 4, "2026-10-16", "Revision de bujias y amortiguadores", 20500, idOrd);
+    agregarRepuestoAOrden(idOrd, 4, 4);
+    agregarRepuestoAOrden(idOrd, 6, 2);
+    cerrarOrden(idOrd, 50.00f, "2026-10-17");
+
+    // Damos de baja al Mecánico #4 (ahora tiene 0 órdenes abiertas y 2 cerradas)
+    DarDeBajaMecanico(4);
+
+    // Orden #6 (ANULADA - 2 líneas) - Vehículo 6, Mecánico 1
+    abrirOrden(6, 1, "2026-10-18", "Presupuesto de frenos y bateria", 65200, idOrd);
+    agregarRepuestoAOrden(idOrd, 1, 2);
+    agregarRepuestoAOrden(idOrd, 5, 1);
+    anularOrden(idOrd);
+
+    // Orden #7 (ANULADA - 1 línea) - Vehículo 7, Mecánico 2
+    abrirOrden(7, 2, "2026-10-19", "Cambio de filtro cancelado por cliente", 89300, idOrd);
+    agregarRepuestoAOrden(idOrd, 3, 2);
+    anularOrden(idOrd);
+
+    // Orden #8 (ABIERTA - 2 líneas) - Vehículo 1, Mecánico 1
+    abrirOrden(8, 1, "2026-11-15", "Ruido en correa y luces delanteras", 45100, idOrd);
+    agregarRepuestoAOrden(idOrd, 7, 1);
+    agregarRepuestoAOrden(idOrd, 9, 2);
+
+    // Orden #9 (ABIERTA - 2 líneas) - Vehículo 2, Mecánico 2
+    abrirOrden(2, 2, "2026-11-16", "Vibracion al frenar en carretera", 129100, idOrd);
+    agregarRepuestoAOrden(idOrd, 8, 2);
+    agregarRepuestoAOrden(idOrd, 10, 1);
+
+    // Orden #10 (ABIERTA - 1 línea) - Vehículo 8, Mecánico 3
+    abrirOrden(8, 3, "2026-11-18", "Mantenimiento de los 15.000 km", 15500, idOrd);
+    agregarRepuestoAOrden(idOrd, 11, 4);
 }
 
 int main () {
