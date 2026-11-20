@@ -3,6 +3,7 @@
 #include <ctime>
 #include <windows.h>
 #include <direct.h> // mkdir en Windows
+#include <io.h> // para _isatty y _fileno en Windows
 using namespace std;
 
 // const y rutas
@@ -636,13 +637,24 @@ void limpiar(){
     #endif
 }
 
+bool esEntradaInteractiva() {
+    return _isatty(_fileno(stdin)) != 0;
+}
+
 void pausar() {
-    // En pruebas automáticas no bloqueamos con system("pause") ni cin.get()
-    // para evitar consumir entradas del flujo de prueba o colgar en EOF.
-    if (cin.eof()) {
+    if (cin.eof() || cin.fail()) {
+        cout << endl;
         return;
     }
-    cout << endl;
+
+    // Si viene redirigido desde un .txt (prueba automática), no consumimos entrada extra
+    if (!esEntradaInteractiva()) {
+        cout << endl;
+        return;
+    }
+
+    cout << "\nPresione Enter para continuar...";
+    cin.get();
 }
 
 char aMinuscula(char c){
@@ -869,6 +881,7 @@ CodigoResultado actualizarVehiculo(int id, Vehiculo nuevosDatos){
     Vehiculo actual;
     CodigoResultado res = persistenciaLeerVehiculoPorID(id, actual);
     if (res != RES_OK) return res;
+    if (actual.eliminado) return RES_ELIMINADO;
 
     // Validar que los nuevos datos sean validos
     if (nuevosDatos.anio < 1950 || nuevosDatos.anio > 2027){
@@ -930,7 +943,7 @@ CodigoResultado eliminarVehiculo(int id){
     Vehiculo v;
     CodigoResultado res = persistenciaLeerVehiculoPorID(id, v);
     if (res != RES_OK) return res;
-
+    if (v.eliminado) return RES_ELIMINADO;
     int totalOrdenes = persistenciaObtenerTotalRegistros(RUTA_ORDENES);
     for (int idOrden = 1; idOrden <= totalOrdenes; idOrden++){
         OrdenServicio o;
@@ -1553,7 +1566,432 @@ CodigoResultado listarOrdenesPorVehiculo(int idVehiculo, OrdenServicio resultado
     return (cantidad > 0) ? RES_OK : RES_NO_EXISTE;
 }
 
+// ============================================================================
+//         MÓDULO DE MANTENIMIENTO: INTEGRIDAD Y BACKUP
+// ============================================================================
 
+// Auxiliar de persistencia/mantenimiento: cuenta registros físicos reales vs Header
+int verificarHeaderArchivo(const char* ruta, const char* nombreArchivo, int &totalRealesOut) {
+    totalRealesOut = 0;
+    int problemas = 0;
+
+    ArchivoHeader h;
+    if (!leerHeader(ruta, h)) {
+        cout << "ROTO: No se pudo leer el ArchivoHeader de " << nombreArchivo << endl;
+        return 1;
+    }
+
+    ifstream archivo(ruta, ios::binary);
+    if (!archivo.is_open()) {
+        cout << "ROTO: No se pudo abrir " << nombreArchivo << " para verificación." << endl;
+        return 1;
+    }
+
+    archivo.seekg(sizeof(ArchivoHeader), ios::beg);
+    int contReales  = 0;
+    int contActivos = 0;
+
+    // Leemos registro a registro según el tipo de archivo
+    if (compararCadenasExactas(nombreArchivo, "vehiculos.bin")) {
+        Vehiculo v;
+        while (archivo.read(reinterpret_cast<char*>(&v), sizeof(Vehiculo))) {
+            contReales++;
+            if (!v.eliminado) contActivos++;
+        }
+    } else if (compararCadenasExactas(nombreArchivo, "mecanicos.bin")) {
+        Mecanico m;
+        while (archivo.read(reinterpret_cast<char*>(&m), sizeof(Mecanico))) {
+            contReales++;
+            if (!m.eliminado) contActivos++;
+        }
+    } else if (compararCadenasExactas(nombreArchivo, "repuestos.bin")) {
+        Repuesto r;
+        while (archivo.read(reinterpret_cast<char*>(&r), sizeof(Repuesto))) {
+            contReales++;
+            if (!r.eliminado) contActivos++;
+        }
+    } else if (compararCadenasExactas(nombreArchivo, "ordenes.bin")) {
+        OrdenServicio o;
+        while (archivo.read(reinterpret_cast<char*>(&o), sizeof(OrdenServicio))) {
+            contReales++;
+            if (!o.eliminado) contActivos++;
+        }
+    }
+    archivo.close();
+
+    totalRealesOut = contReales;
+
+    // Verificación: Header vs registros físicos reales
+    if (h.cantidadRegistros != contReales) {
+        cout << "ROTO: Header de " << nombreArchivo << " indica " << h.cantidadRegistros
+             << " registros; el archivo contiene " << contReales << endl;
+        problemas++;
+    }
+    if (h.registrosActivos != contActivos) {
+        cout << "ROTO: Header de " << nombreArchivo << " indica " << h.registrosActivos
+             << " registros activos; se contaron " << contActivos << endl;
+        problemas++;
+    }
+
+    return problemas;
+}
+
+void verificarIntegridad() {
+    cout << "\n=== VERIFICANDO INTEGRIDAD DE ARCHIVOS BINARIOS ===" << endl;
+    int problemas = 0;
+    int numVehiculos = 0, numMecanicos = 0, numRepuestos = 0, numOrdenes = 0;
+
+    // 1. Verificar Headers contra el tamaño/contenido real
+    problemas += verificarHeaderArchivo(RUTA_VEHICULOS, "vehiculos.bin", numVehiculos);
+    problemas += verificarHeaderArchivo(RUTA_MECANICOS, "mecanicos.bin", numMecanicos);
+    problemas += verificarHeaderArchivo(RUTA_REPUESTOS, "repuestos.bin", numRepuestos);
+    problemas += verificarHeaderArchivo(RUTA_ORDENES,   "ordenes.bin",   numOrdenes);
+
+    // 2. Verificar Repuestos con stock negativo
+    for (int idRep = 1; idRep <= numRepuestos; idRep++) {
+        Repuesto r;
+        if (persistenciaLeerRepuestoPorID(idRep, r) == RES_OK) {
+            if (!r.eliminado && r.stock < 0) {
+                cout << "ROTO: Repuesto #" << r.id << " ('" << r.nombre
+                     << "') tiene stock negativo (" << r.stock << ")" << endl;
+                problemas++;
+            }
+        }
+    }
+
+    // 3. Verificar integridad referencial de cada Orden
+    for (int idOrd = 1; idOrd <= numOrdenes; idOrd++) {
+        OrdenServicio o;
+        if (persistenciaLeerOrdenPorID(idOrd, o) == RES_OK) {
+            bool esAbierta = compararCadenasExactas(o.estado, "ABIERTA");
+
+            //Verificar Vehículo
+            Vehiculo v;
+            if (persistenciaLeerVehiculoPorID(o.idVehiculo, v) != RES_OK) {
+                cout << "ROTO: Orden #" << o.id << " apunta al vehículo ID " << o.idVehiculo
+                     << " (no existe en vehiculos.bin)" << endl;
+                problemas++;
+            } else if (esAbierta && v.eliminado) {
+                cout << "ROTO: Orden ABIERTA #" << o.id << " apunta al vehículo ID " << o.idVehiculo
+                     << " ('" << v.placa << "') que está eliminado" << endl;
+                problemas++;
+            }
+
+            //Verificar Mecánico (en CERRADA/ANULADA un mecánico de baja es válido)
+            Mecanico m;
+            if (persistenciaLeerMecanicoPorID(o.idMecanico, m) != RES_OK) {
+                cout << "ROTO: Orden #" << o.id << " apunta al mecánico ID " << o.idMecanico
+                     << " (no existe en mecanicos.bin)" << endl;
+                problemas++;
+            } else if (esAbierta && m.eliminado) {
+                cout << "ROTO: Orden ABIERTA #" << o.id << " apunta al mecánico ID " << o.idMecanico
+                     << " ('" << m.nombre << "') que está dado de baja" << endl;
+                problemas++;
+            }
+
+            //Verificar cada línea de detalle de la orden
+            for (int j = 0; j < o.numDetalles; j++) {
+                int idRep = o.detalles[j].idRepuesto;
+                Repuesto rep;
+                if (persistenciaLeerRepuestoPorID(idRep, rep) != RES_OK) {
+                    cout << "ROTO: Orden #" << o.id << " (línea " << (j + 1)
+                         << ") apunta al repuesto ID " << idRep << " (no existe en repuestos.bin)" << endl;
+                    problemas++;
+                }
+            }
+        }
+    }
+
+    // 4. Cuadro resumen oficial
+    cout << "\n╔═══════════════════════════════════════════════════════╗" << endl;
+    cout << "║         REPORTE DE INTEGRIDAD DEL SISTEMA             ║" << endl;
+    cout << "╠═══════════════════════════════════════════════════════╣" << endl;
+    cout << "║ Vehículos verificados : " << numVehiculos << "\t\t\t\t║" << endl;
+    cout << "║ Mecánicos verificados : " << numMecanicos << "\t\t\t\t║" << endl;
+    cout << "║ Repuestos verificados : " << numRepuestos << "\t\t\t\t║" << endl;
+    cout << "║ Órdenes verificadas   : " << numOrdenes   << "\t\t\t\t║" << endl;
+    cout << "║                                                       ║" << endl;
+    cout << "║ Problemas encontrados : " << problemas    << "\t\t\t\t║" << endl;
+    if (problemas == 0) {
+        cout << "║ Estado: SISTEMA ÍNTEGRO                               ║" << endl;
+    } else {
+        cout << "║ Estado: SISTEMA CON INCONSISTENCIAS                   ║" << endl;
+    }
+    cout << "╚═══════════════════════════════════════════════════════╝" << endl;
+}
+
+// Auxiliar para copiar cualquier archivo binario byte a byte
+bool copiarArchivoByteAByte(const char* rutaOrigen, const char* rutaDestino) {
+    ifstream origen(rutaOrigen, ios::binary);
+    if (!origen.is_open()) return false;
+
+    ofstream destino(rutaDestino, ios::binary | ios::out);
+    if (!destino.is_open()) {
+        origen.close();
+        return false;
+    }
+
+    char byteBuffer;
+    while (origen.read(&byteBuffer, sizeof(char))) {
+        destino.write(&byteBuffer, sizeof(char));
+    }
+
+    bool ok = destino.good() || origen.eof();
+    origen.close();
+    destino.close();
+    return ok;
+}
+
+// Auxiliar para armar "carpeta/archivo.bin" sin usar std::string
+void concatenarRuta(char* destino, const char* carpeta, const char* archivo) {
+    int i = 0;
+    while (carpeta[i] != '\0') { destino[i] = carpeta[i]; i++; }
+    destino[i++] = '/';
+    int j = 0;
+    while (archivo[j] != '\0') { destino[i++] = archivo[j++]; }
+    destino[i] = '\0';
+}
+
+//Respaldo (Backup) con fecha y hora actual: backup_YYYY-MM-DD_HH-MM
+void crearBackup() {
+    time_t t = time(nullptr);
+    tm* ahora = localtime(&t);
+
+    int anio = ahora->tm_year + 1900;
+    int mes  = ahora->tm_mon + 1;
+    int dia  = ahora->tm_mday;
+    int hora = ahora->tm_hour;
+    int min  = ahora->tm_min;
+
+    char carpeta[40] = "backup_";
+    carpeta[7]  = (anio / 1000) % 10 + '0';
+    carpeta[8]  = (anio / 100) % 10 + '0';
+    carpeta[9]  = (anio / 10) % 10 + '0';
+    carpeta[10] = (anio % 10) + '0';
+    carpeta[11] = '-';
+    carpeta[12] = (mes / 10) + '0';
+    carpeta[13] = (mes % 10) + '0';
+    carpeta[14] = '-';
+    carpeta[15] = (dia / 10) + '0';
+    carpeta[16] = (dia % 10) + '0';
+    carpeta[17] = '_';
+    carpeta[18] = (hora / 10) + '0';
+    carpeta[19] = (hora % 10) + '0';
+    carpeta[20] = '-';
+    carpeta[21] = (min / 10) + '0';
+    carpeta[22] = (min % 10) + '0';
+    carpeta[23] = '\0';
+
+    crearDirectorio(carpeta);
+
+    char rutaDest[100];
+    int copiados = 0;
+
+    if (existeArchivoTaller()) {
+        concatenarRuta(rutaDest, carpeta, "taller.bin");
+        if (copiarArchivoByteAByte(RUTA_TALLER, rutaDest)) copiados++;
+    }
+    concatenarRuta(rutaDest, carpeta, "vehiculos.bin");
+    if (copiarArchivoByteAByte(RUTA_VEHICULOS, rutaDest)) copiados++;
+
+    concatenarRuta(rutaDest, carpeta, "mecanicos.bin");
+    if (copiarArchivoByteAByte(RUTA_MECANICOS, rutaDest)) copiados++;
+
+    concatenarRuta(rutaDest, carpeta, "repuestos.bin");
+    if (copiarArchivoByteAByte(RUTA_REPUESTOS, rutaDest)) copiados++;
+
+    concatenarRuta(rutaDest, carpeta, "ordenes.bin");
+    if (copiarArchivoByteAByte(RUTA_ORDENES, rutaDest)) copiados++;
+
+    cout << "\n✓ Respaldo creado exitosamente (" << copiados << " archivos .bin copiados)." << endl;
+    cout << "Ruta del respaldo: " << carpeta << "/" << endl;
+}
+
+// ============================================================================
+//         MÓDULO DE REPORTES DESDE DISCO
+// ============================================================================
+
+// Reporte 1: Historial de un vehículo por placa + total facturado en CERRADAS
+void reporteHistorialVehiculo(const char* placaBuscada) {
+    Vehiculo v;
+    if (buscarVehiculoPorPlaca(placaBuscada, v) != RES_OK) {
+        cout << "\nERROR: No se encontró ningún vehículo activo con la placa '" << placaBuscada << "'." << endl;
+        return;
+    }
+
+    cout << "\n╔════════════════════════════════════════════════════════════════╗" << endl;
+    cout << "║                 REPORTE 1: HISTORIAL DE VEHÍCULO               ║" << endl;
+    cout << "╠════════════════════════════════════════════════════════════════╣" << endl;
+    cout << "║ Vehículo    : #" << v.id << " - " << v.placa << " (" << v.marca << " " << v.modelo << " " << v.anio << ")" << endl;
+    cout << "║ Kilometraje : " << v.kilometraje << " km" << endl;
+    cout << "║ Propietario : " << v.nombrePropietario << " (CI: " << v.cedulaPropietario << ")" << endl;
+    cout << "╠════════╦════════════╦══════════════════════╦══════════╦════════╣" << endl;
+    cout << "║ Orden  ║ Fecha      ║ Mecánico             ║ Estado   ║ Total  ║" << endl;
+    cout << "╠════════╬════════════╬══════════════════════╬══════════╬════════╣" << endl;
+
+    int totalOrdenes = persistenciaObtenerTotalRegistros(RUTA_ORDENES);
+    float totalFacturadoCerradas = 0.0f;
+    int contOrdenes = 0;
+
+    for (int idOrd = 1; idOrd <= totalOrdenes; idOrd++) {
+        OrdenServicio o;
+        if (persistenciaLeerOrdenPorID(idOrd, o) == RES_OK) {
+            if (!o.eliminado && o.idVehiculo == v.id) {
+                contOrdenes++;
+
+                // Leemos el mecánico desde disco (incluso si está dado de baja)
+                Mecanico m;
+                const char* nombreMec = "Desconocido";
+                if (persistenciaLeerMecanicoPorID(o.idMecanico, m) == RES_OK) {
+                    nombreMec = m.nombre;
+                }
+
+                float totalOrden = calcularTotalOrden(o);
+                if (compararCadenasExactas(o.estado, "CERRADA")) {
+                    totalFacturadoCerradas += totalOrden;
+                }
+
+                cout << "║ #" << o.id << "\t ║ " << o.fechaApertura << " ║ "
+                     << nombreMec << "\t ║ " << o.estado << " ║ $" << totalOrden << " ║" << endl;
+            }
+        }
+    }
+
+    if (contOrdenes == 0) {
+        cout << "║          Este vehículo no registra órdenes de servicio.        ║" << endl;
+    }
+    cout << "╠════════╩════════════╩══════════════════════╩══════════╬════════╣" << endl;
+    cout << "║ TOTAL FACTURADO (Solo órdenes CERRADAS)               ║ $" << totalFacturadoCerradas << " ║" << endl;
+    cout << "╚═══════════════════════════════════════════════════════╩════════╝" << endl;
+}
+
+// Estructura auxiliar para mantener solo el Top 10 en RAM
+const int MAX_TOP_REPUESTOS = 10;
+struct TopRepuesto {
+    int  id;
+    char codigo[20];
+    char nombre[100];
+    int  unidadesConsumidas;
+};
+
+// Reporte 2: Los 10 repuestos más utilizados en órdenes CERRADAS
+void reporteRepuestosMasUtilizados() {
+    TopRepuesto top[MAX_TOP_REPUESTOS];
+    int cantidadEnTop = 0;
+
+    int totalRepuestos = persistenciaObtenerTotalRegistros(RUTA_REPUESTOS);
+    int totalOrdenes   = persistenciaObtenerTotalRegistros(RUTA_ORDENES);
+
+    for (int idRep = 1; idRep <= totalRepuestos; idRep++) {
+        Repuesto r;
+        if (persistenciaLeerRepuestoPorID(idRep, r) != RES_OK || r.eliminado) {
+            continue;
+        }
+
+        // Contamos cuántas unidades de este repuesto se usaron en órdenes CERRADAS
+        int unidades = 0;
+        for (int idOrd = 1; idOrd <= totalOrdenes; idOrd++) {
+            OrdenServicio o;
+            if (persistenciaLeerOrdenPorID(idOrd, o) == RES_OK) {
+                if (!o.eliminado && compararCadenasExactas(o.estado, "CERRADA")) {
+                    for (int j = 0; j < o.numDetalles; j++) {
+                        if (o.detalles[j].idRepuesto == r.id) {
+                            unidades += o.detalles[j].cantidad;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Si tuvo consumo, lo insertamos ordenadamente en el Top 10
+        if (unidades > 0) {
+            TopRepuesto candidato;
+            candidato.id = r.id;
+            int i = 0;
+            while (r.codigo[i] != '\0' && i < 19) { candidato.codigo[i] = r.codigo[i]; i++; }
+            candidato.codigo[i] = '\0';
+            i = 0;
+            while (r.nombre[i] != '\0' && i < 99) { candidato.nombre[i] = r.nombre[i]; i++; }
+            candidato.nombre[i] = '\0';
+            candidato.unidadesConsumidas = unidades;
+
+            int posInsertar = -1;
+            for (int k = 0; k < cantidadEnTop; k++) {
+                if (candidato.unidadesConsumidas > top[k].unidadesConsumidas) {
+                    posInsertar = k;
+                    break;
+                }
+            }
+
+            if (posInsertar != -1) {
+                int limite = (cantidadEnTop < MAX_TOP_REPUESTOS) ? cantidadEnTop : (MAX_TOP_REPUESTOS - 1);
+                for (int k = limite; k > posInsertar; k--) {
+                    top[k] = top[k - 1];
+                }
+                top[posInsertar] = candidato;
+                if (cantidadEnTop < MAX_TOP_REPUESTOS) cantidadEnTop++;
+            } else if (cantidadEnTop < MAX_TOP_REPUESTOS) {
+                top[cantidadEnTop] = candidato;
+                cantidadEnTop++;
+            }
+        }
+    }
+
+    cout << "\n╔══════╦══════════════╦══════════════════════════════════╦══════════╗" << endl;
+    cout << "║ Pos  ║ Código       ║ Repuesto                         ║ Unidades ║" << endl;
+    cout << "╠══════╬══════════════╬══════════════════════════════════╬══════════╣" << endl;
+    if (cantidadEnTop == 0) {
+        cout << "║      No hay repuestos consumidos en órdenes CERRADAS aún.         ║" << endl;
+    } else {
+        for (int i = 0; i < cantidadEnTop; i++) {
+            cout << "║ #" << (i + 1) << "   ║ " << top[i].codigo << "\t      ║ "
+                 << top[i].nombre << "\t ║    " << top[i].unidadesConsumidas << "     ║" << endl;
+        }
+    }
+    cout << "╚══════╩══════════════╩══════════════════════════════════╩══════════╝" << endl;
+}
+
+// Reporte 3: Facturación por mecánico (activos y dados de baja) en órdenes CERRADAS
+void reporteFacturacionPorMecanico() {
+    int totalMecanicos = persistenciaObtenerTotalRegistros(RUTA_MECANICOS);
+    int totalOrdenes   = persistenciaObtenerTotalRegistros(RUTA_ORDENES);
+
+    cout << "\n╔══════════════════════╦═══════════╦═══════════╦═══════════╗" << endl;
+    cout << "║ Mecánico             ║ Órdenes   ║ M. obra   ║ Repuestos ║" << endl;
+    cout << "╠══════════════════════╬═══════════╬═══════════╬═══════════╣" << endl;
+
+    if (totalMecanicos == 0) {
+        cout << "║        No hay mecánicos registrados en el sistema.       ║" << endl;
+    }
+
+    for (int idMec = 1; idMec <= totalMecanicos; idMec++) {
+        Mecanico m;
+        if (persistenciaLeerMecanicoPorID(idMec, m) != RES_OK) continue;
+
+        int ordenesCerradas  = 0;
+        float totalManoObra  = 0.0f;
+        float totalRepuestos = 0.0f;
+
+        for (int idOrd = 1; idOrd <= totalOrdenes; idOrd++) {
+            OrdenServicio o;
+            if (persistenciaLeerOrdenPorID(idOrd, o) == RES_OK) {
+                if (!o.eliminado && o.idMecanico == m.id && compararCadenasExactas(o.estado, "CERRADA")) {
+                    ordenesCerradas++;
+                    totalManoObra += o.manoObra;
+                    for (int j = 0; j < o.numDetalles; j++) {
+                        totalRepuestos += (o.detalles[j].cantidad * o.detalles[j].precioUnitario);
+                    }
+                }
+            }
+        }
+
+        cout << "║ " << m.nombre;
+        if (m.eliminado) cout << " (BAJA)";
+        cout << "\t ║     " << ordenesCerradas << "     ║  $" << totalManoObra
+             << "   ║  $" << totalRepuestos << "   ║" << endl;
+    }
+    cout << "╚══════════════════════╩═══════════╩═══════════╩═══════════╝" << endl;
+}
 
 //=========================
 //      CAPA VISUAL
@@ -1568,6 +2006,8 @@ void menuPrincipal (){
     cout << "║ 2. Gestión de Mecánicos                   ║" << endl;
     cout << "║ 3. Inventario de Repuestos                ║" << endl;
     cout << "║ 4. Órdenes de Servicio                    ║" << endl;
+    cout << "║ 5. Reportes                               ║" << endl;
+    cout << "║ 6. Mantenimiento                          ║" << endl;
     cout << "║ 0. Salir                                  ║" << endl;
     cout << "╚═══════════════════════════════════════════╝" << endl;
     cout << "Seleccione una opcion: ";
@@ -1807,12 +2247,17 @@ void uiBuscarVehiculo(){
         cin.ignore(10000, '\n');
 
         Vehiculo v{};
-        CodigoResultado res = buscarVehiculoPorID(id, v, nullptr);
+        long posBytes = 0;
+        CodigoResultado res = buscarVehiculoPorID(id, v, &posBytes);
         if (res == RES_OK) {
+            cout << "\n[DEBUG ACCESO ALEATORIO] Registro leido en la posicion: " << posBytes << " bytes." << endl;
             mostrarVehiculo(v);
         } else {
-            mostrarMensajeResultadoVehiculo(res, "");
+            if (res == RES_ELIMINADO) {
+                cout << "\n[DEBUG ACCESO ALEATORIO] Registro ubicado en la posicion: " << posBytes << " bytes." << endl;
+            }
         }
+            mostrarMensajeResultadoVehiculo(res, "");
     } else if (op == 2) {
         char placa[10];
         cout << "Ingrese la placa: ";
@@ -2012,32 +2457,6 @@ void uiBuscarMecanicoID(){
         cout << "Especialidad: " << m.especialidad << endl;
         cout << "Ingreso     : " << m.fechaIngreso << endl;
         cout << "Órdenes Ab. : " << ContarOrdenesAbiertasMecanico(m.id) << endl;
-    } else {
-        cout << "\nERROR: No existe ningún mecánico con el ID #" << id << "." << endl;
-    }
-    pausar();
-}
-
-void uiDarDeBajaMecanico(){
-    limpiar();
-    cout << "=== DAR DE BAJA MECÁNICO ===" << endl;
-    int id;
-    cout << "Ingrese el ID del mecánico a dar de baja: ";
-    if (!(cin >> id)) { cin.clear(); cin.ignore(10000, '\n'); return; }
-
-    if (!pedirConfirmacion("\n¿Confirmar la baja del mecánico?")) {
-        cout << "\nOperación cancelada." << endl;
-        cin.ignore(10000, '\n'); pausar(); return;
-    }
-    cin.ignore(10000, '\n');
-
-    CodigoResultado res = DarDeBajaMecanico(id);
-    if (res == RES_OK) {
-        cout << "\n✓ Mecánico dado de baja exitosamente. Su historial en órdenes cerradas se conserva." << endl;
-    } else if (res == RES_TIENE_RELACIONES) {
-        cout << "\nERROR: El mecánico tiene órdenes ABIERTAS y no puede darse de baja hasta cerrarlas." << endl;
-    } else if (res == RES_ELIMINADO) {
-        cout << "\nAVISO: Ese mecánico ya se encontraba dado de baja." << endl;
     } else {
         cout << "\nERROR: No existe ningún mecánico con el ID #" << id << "." << endl;
     }
@@ -2725,6 +3144,31 @@ void uiListarOrdenes() {
     }
 }
 
+// ------------------------- REPORTES Y MANTENIMIENTO UI -------------------------
+
+void menuReportes() {
+    cout << "╔═══════════════════════════════════════════╗" << endl;
+    cout << "║                 REPORTES                  ║" << endl;
+    cout << "╠═══════════════════════════════════════════╣" << endl;
+    cout << "║ 1. Historial de vehículo (por placa)      ║" << endl;
+    cout << "║ 2. Top 10 repuestos más utilizados        ║" << endl;
+    cout << "║ 3. Facturación por mecánico               ║" << endl;
+    cout << "║ 0. Volver al menú principal               ║" << endl;
+    cout << "╚═══════════════════════════════════════════╝" << endl;
+    cout << "Seleccione una opción: ";
+}
+
+void menuMantenimiento() {
+    cout << "╔═══════════════════════════════════════════╗" << endl;
+    cout << "║               MANTENIMIENTO               ║" << endl;
+    cout << "╠═══════════════════════════════════════════╣" << endl;
+    cout << "║ 1. Verificar integridad del sistema       ║" << endl;
+    cout << "║ 2. Crear respaldo (Backup)                ║" << endl;
+    cout << "║ 0. Volver al menú principal               ║" << endl;
+    cout << "╚═══════════════════════════════════════════╝" << endl;
+    cout << "Seleccione una opción: ";
+}
+
 // ==================================================
 //     PRE-POBLADO AUTOMÁTICO DE DATOS INICIALES 
 // ==================================================
@@ -2863,7 +3307,7 @@ void prepoblarDatosIniciales() {
     anularOrden(idOrd);
 
     // Orden #8 (ABIERTA - 2 líneas) - Vehículo 1, Mecánico 1
-    abrirOrden(8, 1, "2026-11-15", "Ruido en correa y luces delanteras", 45100, idOrd);
+    abrirOrden(1, 1, "2026-11-15", "Ruido en correa y luces delanteras", 45100, idOrd);
     agregarRepuestoAOrden(idOrd, 7, 1);
     agregarRepuestoAOrden(idOrd, 9, 2);
 
@@ -2882,14 +3326,37 @@ int main () {
     #ifdef _WIN32
         SetConsoleOutputCP(65001);
     #endif
-    
+    // 1. Inicializar carpeta datos/ y archivos binarios de entidades
+    if (!inicializarArchivosSistema()) {
+        cout << "ERROR CRÍTICO: No se pudieron inicializar los archivos en 'datos/'." << endl;
+        return 1;
+    }
     prepoblarDatosIniciales();
     
+    // 2. Cargar o crear datos/taller.bin (Sección 1.1)
+    Taller datosTaller;
+    if (!existeArchivoTaller()) {
+        cout << "=== CONFIGURACIÓN INICIAL DEL TALLER (PRIMER ARRANQUE) ===" << endl;
+        cout << "Nombre del taller: "; cin.getline(datosTaller.nombre, 100);
+        cout << "RIF: ";               cin.getline(datosTaller.rif, 20);
+        cout << "Dirección: ";         cin.getline(datosTaller.direccion, 200);
+        cout << "Teléfono: ";          cin.getline(datosTaller.telefono, 20);
+        guardarTaller(datosTaller);
+        cout << "\n✓ Datos del taller guardados en '" << RUTA_TALLER << "'." << endl;
+        pausar();
+    } else {
+        leerTaller(datosTaller);
+    }
+
     int mayuya = 0;
     int mayuya2 = 0;
+    bool primeraVezPrincipal = true;
 
     do {
-        limpiar();
+        if (primeraVezPrincipal) {
+            limpiar();
+            primeraVezPrincipal = false;
+        }
         menuPrincipal();
 
         if (!(cin >> mayuya)){
@@ -2904,8 +3371,12 @@ int main () {
 
         switch (mayuya) {
             case 1: {
+                bool primeraVezSub = true;
                 do{
-                    limpiar();
+                    if (primeraVezSub) {
+                        limpiar();
+                        primeraVezSub = false;
+                    }
                     menuVehículos();
                     
                     if (!(cin >> mayuya2)){
@@ -2922,30 +3393,37 @@ int main () {
                         case 1: 
                             uiRegistrarVehiculo();
                             pausar();
+                            limpiar();
                             break;
                         case 2:
                             uiBuscarVehiculo();
                             pausar();
+                            limpiar();
                             break;
                         case 3:
                             uiActualizarVehiculo();
                             pausar();
+                            limpiar();
                             break;
                         case 4:
                             uiEliminarVehiculo();
                             pausar();
+                            limpiar();
                             break;
                         case 5:
                             uiListarVehiculos();
                             pausar();
+                            limpiar();
                             break;
                         case 6:
                             mostrarVehiculoIndividual();
                             pausar();
+                            limpiar();
                             break;
                         case 7:
                             mostrarListaVehiculosCompleta();
                             pausar();
+                            limpiar();
                             break;
                         case 0:
                             break;
@@ -2956,11 +3434,14 @@ int main () {
                             break;
                     }
                 }while(mayuya2 != 0);
-                limpiar();
                 break;
             }case 2: {
+                bool primeraVezSub = true;
                 do{
-                    limpiar();
+                    if (primeraVezSub) {
+                        limpiar();
+                        primeraVezSub = false;
+                    }
                     menuMecánicos();
                 
                     if (!(cin >> mayuya2)){
@@ -2977,14 +3458,22 @@ int main () {
                         case 1: 
                             uiRegistrarMecanico();
                             pausar();
+                            limpiar();
                             break;
                         case 2:
                             uiBuscarMecanicoID();
                             pausar();
+                            limpiar();
                             break;
                         case 3:
                             uiListarMecanicos();
                             pausar();
+                            limpiar();
+                            break;
+                        case 4:
+                            uiDarDeBajaMecanico();
+                            pausar();
+                            limpiar();
                             break;
                         case 0:
                             break;  
@@ -2999,8 +3488,12 @@ int main () {
                 break;
             
             } case 3: {
+                bool primeraVezSub = true;
                 do {
-                    limpiar();
+                    if (primeraVezSub){
+                        limpiar();
+                        primeraVezSub = false;
+                    }
                     menuRepuestos();
 
                     if (!(cin >> mayuya2)){
@@ -3016,21 +3509,33 @@ int main () {
                     switch (mayuya2){
                         case 1:
                             uiRegistrarRepuesto();
+                            pausar();
+                            limpiar();
                             break;
                         case 2:
                             uiBuscarRepuesto();
+                            pausar();
+                            limpiar();
                             break;
                         case 3:
                             uiEntradaMercancia();
+                            pausar();
+                            limpiar();
                             break;
                         case 4:
                             uiListarRepuestos();
+                            pausar();
+                            limpiar();
                             break;
                         case 5:
                             uiCambiarPrecioRepuesto();
+                            pausar();
+                            limpiar();
                             break;
                         case 6:
                             uiEliminarRepuesto();
+                            pausar();
+                            limpiar();
                             break;
                         case 0:
                             break;
@@ -3044,8 +3549,12 @@ int main () {
                 limpiar();
                 break;
             } case 4: {
+                bool primeraVezSub = true;
                 do{
-                    limpiar();
+                    if (primeraVezSub){
+                        limpiar();
+                        primeraVezSub = false;
+                    }
                     menuÓrdenes();
 
                     if (!(cin >> mayuya2)){
@@ -3061,41 +3570,140 @@ int main () {
                     switch (mayuya2){
                         case 1:
                             uiAbrirOrden();
+                            pausar();
+                            limpiar();
                             break; 
                         case 2:
                             uiAgregarRepuestoOrden();
+                            pausar();
+                            limpiar();
                             break;
                         case 3:
                             uiQuitarRepuestoOrden();
+                            pausar();
+                            limpiar();
                             break;
                         case 4:
                             uiCerrarOrden();
+                            pausar();
+                            limpiar();
                             break;
                         case 5:
                             uiAnularOrden();
+                            pausar();
+                            limpiar();
                             break;
                         case 6:
                             uiVerDetalleOrden();
+                            pausar();
+                            limpiar();
                             break;
                         case 7:
                             uiListarOrdenes();
+                            pausar();
+                            limpiar();
                             break;
                         case 0:
                             break;
                         default:
-                            cout << "Opcion invalida." << endl;
                             limpiar();
+                            cout << "Opcion invalida." << endl;
                             break;
                     }
                 }while(mayuya2 != 0);
                 break;
 
+            } case 5: {
+                bool primeraVezSub = true;
+                do {
+                    if (primeraVezSub) {
+                        limpiar();
+                        primeraVezSub = false;
+                    }
+                    menuReportes();
+                    if (!(cin >> mayuya2)) { if (cin.eof()) { mayuya2 = 0; break; } cin.clear(); cin.ignore(10000, '\n'); mayuya2 = -1; }
+                    switch (mayuya2) {
+                        case 1: {
+                            char placa[10];
+                            cout << "Ingrese la placa del vehículo: "; cin >> placa;
+                            cin.ignore(10000, '\n');
+                            reporteHistorialVehiculo(placa);
+                            pausar();
+                            limpiar();
+                            break;
+                        }
+                        case 2: {
+                            cin.ignore(10000, '\n'); 
+                            reporteRepuestosMasUtilizados(); 
+                            pausar(); 
+                            limpiar();
+                            break;
+                        }
+                        case 3: {  
+                            cin.ignore(10000, '\n'); 
+                            reporteFacturacionPorMecanico(); 
+                            pausar(); 
+                            limpiar();
+                            break;
+                        }
+                        case 0: break;
+                        default: cin.ignore(10000, '\n'); cout << "Opción inválida." << endl; pausar(); break;
+                    }
+                } while (mayuya2 != 0);
+                break;
+            } case 6: {
+                bool primeraVezSub = true;
+                do {
+                    if (primeraVezSub) {
+                        limpiar();
+                        primeraVezSub = false;
+                    }
+                    menuMantenimiento();
+                    if (!(cin >> mayuya2)) {
+                        if (cin.eof()) {
+                            mayuya2 = 0;
+                            break;
+                        }
+                        cin.clear();
+                        cin.ignore(10000, '\n');
+                        cout << "Opción inválida." << endl;
+                        pausar();
+                        limpiar();
+                        continue;
+                    }
+                    switch (mayuya2) {
+                        case 1:
+                            cin.ignore(10000, '\n');
+                            verificarIntegridad();
+                            pausar();
+                            limpiar();
+                            break;
+                        case 2:
+                            cin.ignore(10000, '\n');
+                            crearBackup();
+                            pausar();
+                            limpiar();
+                            break;
+                        case 0:
+                            limpiar();
+                            break;
+                        default:
+                            cin.ignore(10000, '\n');
+                            cout << "Opción inválida." << endl;
+                            pausar();
+                            limpiar();
+                            break;
+                    }
+                } while (mayuya2 != 0);
+                break;
             } case 0: {
                 cout << "Cerrando programa. Hasta pronto..." << endl;
                 break;
             } default:
+                cin.ignore(10000, '\n');
+                cout << "Escoja una opción válida (0-6).\n" << endl;
+                pausar();
                 limpiar();
-                cout << "Escoja una opción válida (0-4).\n" << endl;
             break;
         }
     } while (mayuya != 0);
