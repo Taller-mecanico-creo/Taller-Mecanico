@@ -1528,12 +1528,12 @@ CodigoResultado listarOrdenesPorVehiculo(int idVehiculo, OrdenServicio resultado
 }
 
 
-/* ojo
+
 //=========================
 //      CAPA VISUAL
 //=========================
 
-void menuPrincipal () {
+void menuPrincipal (){
     cout << "╔═══════════════════════════════════════════╗" << endl;
     cout << "║    SISTEMA DE GESTIÓN DE TALLER           ║" << endl;
     cout << "║    Taller: Autoservicio El Wikiti         ║" << endl;
@@ -1548,7 +1548,7 @@ void menuPrincipal () {
 }
 
 //Vehiculos UI
-void menuVehículos () {
+void menuVehículos (){
     cout << "╔═══════════════════════════════════════════╗" << endl;
     cout << "║            GESTIÓN DE VEHÍCULOS           ║" << endl;
     cout << "╠═══════════════════════════════════════════╣" << endl;
@@ -1564,310 +1564,360 @@ void menuVehículos () {
     cout << "Seleccione una opcion: ";
 }
 
-void mostrarVehiculo(Vehiculo* v){
-    if (v == nullptr) return;
-    cout << "----------------------------------------" << endl;
-    cout << " ID          : " << v->id << endl;
-    cout << " Placa       : " << v->placa << endl;
-    cout << " Marca/Modelo: " << v->marca << " " << v->modelo << " (" << v->anio << ")" << endl;
-    cout << " Kilometraje : " << v->kilometraje << " km" << endl;
-    cout << " Propietario : " << v->nombrePropietario << "(CI:" << v->cedulaPropietario << ")" << endl;
-    cout << " Telefono    : " << v->telefonoPropietario << endl;
-    cout << " Registro    : " << v->fechaRegistro << endl;
+void mostrarMensajeResultadoVehiculo(CodigoResultado res, const char* msgExito){
+    switch (res) {
+        case RES_OK:
+            cout << "\n[OK] " << msgExito << endl;
+            break;
+        case RES_DATOS_INVALIDOS:
+            cout << "\n[ERROR] Datos invalidos. Verifique placa (6-7 alfanumericos), cedula, anio (1950-2027), kilometraje (>= 0) y campos obligatorios." << endl;
+            break;
+        case RES_DUPLICADO:
+            cout << "\n[ERROR] Ya existe un vehiculo activo con esa placa." << endl;
+            break;
+        case RES_NO_EXISTE:
+            cout << "\n[AVISO] No se encontro el vehiculo solicitado." << endl;
+            break;
+        case RES_ELIMINADO:
+            cout << "\n[AVISO] El vehiculo consultado fue dado de baja." << endl;
+            break;
+        case RES_TIENE_RELACIONES:
+            cout << "\n[ERROR] No se puede eliminar el vehiculo porque tiene ordenes de servicio asociadas." << endl;
+            break;
+        case RES_ERROR_ARCHIVO:
+            cout << "\n[ERROR] Error de lectura/escritura en el archivo de vehiculos." << endl;
+            break;
+        default:
+            cout << "\n[ERROR] Operacion no completada (codigo: " << res << ")." << endl;
+            break;
+    }
 }
 
-void mostrarListaVehiculos(Vehiculo** vehiculos, int cantidad){
-    if (vehiculos == nullptr || cantidad <= 0){
+void mostrarVehiculo(const Vehiculo &v){
+    cout << "----------------------------------------" << endl;
+    cout << " ID          : " << v.id << endl;
+    cout << " Placa       : " << v.placa << endl;
+    cout << " Marca/Modelo: " << v.marca << " " << v.modelo << " (" << v.anio << ")" << endl;
+    cout << " Kilometraje : " << v.kilometraje << " km" << endl;
+    cout << " Propietario : " << v.nombrePropietario << " (CI: " << v.cedulaPropietario << ")" << endl;
+    cout << " Telefono    : " << v.telefonoPropietario << endl;    cout << "----------------------------------------" << endl;
+}
+
+void mostrarListaVehiculos(const Vehiculo resultados[], int cantidad, bool hayMas){
+    if (cantidad <= 0) {
         cout << "\n[!] No hay vehiculos para mostrar." << endl;
         return;
     }
+
     cout << "\n=== LISTADO DE VEHICULOS (" << cantidad << ") ===" << endl;
-    for (int i = 0; i < cantidad; i ++){
-        mostrarVehiculo((vehiculos[i]));
+    for (int i = 0; i < cantidad; i++) {
+        mostrarVehiculo(resultados[i]);
     }
-    cout << "----------------------------------------" << endl;
+    if (hayMas) {
+        cout << "[AVISO] Se muestran los primeros " << MAX_RESULTADOS << " registros; existen mas en el archivo." << endl;
+    }
 }
 
-void mostrarVehiculoIndividual(SistemaTaller* s){
+void mostrarVehiculoIndividual(){
     limpiar();
     cout << "=== MOSTRAR VEHICULO ===" << endl;
-    int id;
+    int id = 0;
     cout << "Ingrese el ID del vehiculo: ";
     if (!(cin >> id)) {
-        cin.clear(); cin.ignore(10000, '\n'); return;
-    }
-
-    Vehiculo* v = buscarVehiculoPorID(s, id);
-    if (v != nullptr){
-        cout << "\n--- DATOS DEL VEHICULO ---" << endl;
-        cout << "ID          : " << v->id << endl;
-        cout << "Placa       : " << v->placa << endl;
-        cout << "Marca/Modelo: " << v->marca << " " << v->modelo << " (" << v->anio << ")" << endl;
-        cout << "Kilometraje : " << v->kilometraje << "km" << endl;
-        cout << "Propietario : " << v->nombrePropietario << " (C.I: " << v->cedulaPropietario << ")" << endl;
-        cout << "Telefono    : " << v->telefonoPropietario << endl;
-    } else{
-        cout << "\nNo se encontro ningun vehiculo con el ID " << id << "." << endl;
+        cin.clear();
+        cin.ignore(10000, '\n');
+        return;
     }
     cin.ignore(10000, '\n');
-    limpiar();
+
+    Vehiculo v{};
+    CodigoResultado res = buscarVehiculoPorID(id, v, nullptr);
+    if (res == RES_OK) {
+        mostrarVehiculo(v);
+    } else {
+        mostrarMensajeResultadoVehiculo(res, "");
+    }
 }
 
-void mostrarListaVehiculosCompleta(SistemaTaller* s){
+void mostrarListaVehiculosCompleta(){
     limpiar();
     cout << "=== LISTA DE VEHICULOS ===" << endl;
 
+    Vehiculo resultados[MAX_RESULTADOS];
     int cantidad = 0;
-    Vehiculo** lista = listarVehiculos(s, &cantidad);
+    bool hayMas = false;
 
-    if (lista != nullptr && cantidad > 0){
-        for (int i = 0; i < cantidad; i++){
-            Vehiculo* v = lista[i];
+    CodigoResultado res = listarVehiculos(resultados, cantidad, hayMas);
+
+    if (res == RES_OK && cantidad > 0) {
+        for (int i = 0; i < cantidad; i++) {
+            const Vehiculo &v = resultados[i];
             cout << "----------------------------------------" << endl;
-            cout << "ID          : " << v->id << endl;
-            cout << "Placa       : " << v->placa << endl;
-            cout << "Vehículo    : " << v->marca << " " << v->modelo << " (" << v->anio << ")" << endl;
-            cout << "Kilometraje : " << v->kilometraje << " km" << endl;
-            cout << "Propietario : " << v->nombrePropietario << endl;
+            cout << "ID          : " << v.id << endl;
+            cout << "Placa       : " << v.placa << endl;
+            cout << "Vehiculo    : " << v.marca << " " << v.modelo << " (" << v.anio << ")" << endl;
+            cout << "Kilometraje : " << v.kilometraje << " km" << endl;
+            cout << "Propietario : " << v.nombrePropietario << " (C.I: " << v.cedulaPropietario << ")" << endl;
+            cout << "Telefono    : " << v.telefonoPropietario << endl;
         }
         cout << "----------------------------------------" << endl;
-        cout << "Total de vehiculos: " << cantidad << endl;
-
-        delete[] lista;
-    } else{
-        cout << "\n No hay vehiculos registrados en el sistema." << endl;
+        cout << "Total de vehiculos mostrados: " << cantidad << endl;
+        if (hayMas) {
+            cout << "[AVISO] Existen mas vehiculos registrados (limite de " << MAX_RESULTADOS << " por consulta)." << endl;
+        }
+    } else {
+        mostrarMensajeResultadoVehiculo(res, "");
     }
+
     cin.ignore(10000, '\n');
-    limpiar();
 }
 
-void uiRegistrarVehiculo(SistemaTaller* s){
+void uiRegistrarVehiculo(){
     limpiar();
     cout << "=== REGISTRAR NUEVO VEHICULO ===" << endl;
-    cout << "(Escriba CANCELAR para abortar)." << endl;
-    Vehiculo nuevo;
+    cout << "(Escriba CANCELAR en cualquier campo para abortar)" << endl;
 
-    cout << "Placa: "; cin >> nuevo.placa;
-    if (esCancelar(nuevo.placa)){
-        cout <<"\nRegistro cancelado por el usuario." << endl;
-        cin.ignore(10000, '\n');
-        limpiar();
-        return;
-    }
-    cout << "Marca: "; cin >> nuevo.marca;
-    if (esCancelar(nuevo.marca)){
-        cout <<"\nRegistro cancelado por el usuario." << endl;
-        cin.ignore(10000, '\n');
-        limpiar();
-        return;
-    }
-    cout << "Modelo: "; cin >> nuevo.modelo;
-    if (esCancelar(nuevo.modelo)){
-        cout <<"\nRegistro cancelado por el usuario." << endl;
-        cin.ignore(10000, '\n');
-        limpiar();
-        return;
-    }
-    cout << "Año (1950-2027): ";
-    if (!(cin >> nuevo.anio)) { cin.clear(); cin.ignore(10000, '\n'); nuevo.anio = 0; }
-    
-    cout << "Kilometraje (>= 0): ";
-    if (!(cin >> nuevo.kilometraje)) { cin.clear(); cin.ignore(10000, '\n'); nuevo.kilometraje = -1; }
-    
-    // Limpiamos el salto de linea antes de usar getline
+    Vehiculo nuevo{};
     cin.ignore(10000, '\n');
-    cout << "Nombre del Propietario: "; cin.getline(nuevo.nombrePropietario, 100);
+
+    cout << "Placa: ";
+    cin.getline(nuevo.placa, 10);
+    if (esCancelar(nuevo.placa)) {
+        cout << "\nRegistro cancelado por el usuario." << endl;
+        return;
+    }
+
+    cout << "Marca: ";
+    cin.getline(nuevo.marca, 50);
+    if (esCancelar(nuevo.marca)) {
+        cout << "\nRegistro cancelado por el usuario." << endl;
+        return;
+    }
+
+    cout << "Modelo: ";
+    cin.getline(nuevo.modelo, 50);
+    if (esCancelar(nuevo.modelo)) {
+        cout << "\nRegistro cancelado por el usuario." << endl;
+        return;
+    }
+
+    cout << "Anio (1950-2027): ";
+    if (!(cin >> nuevo.anio)) {
+        cin.clear();
+        cin.ignore(10000, '\n');
+        nuevo.anio = 0;
+    } else {
+        cin.ignore(10000, '\n');
+    }
+
+    cout << "Kilometraje (>= 0): ";
+    if (!(cin >> nuevo.kilometraje)) {
+        cin.clear();
+        cin.ignore(10000, '\n');
+        nuevo.kilometraje = -1;
+    } else {
+        cin.ignore(10000, '\n');
+    }
+
+    cout << "Nombre del Propietario: ";
+    cin.getline(nuevo.nombrePropietario, 100);
     if (esCancelar(nuevo.nombrePropietario)) {
         cout << "\nRegistro cancelado por el usuario." << endl;
-        limpiar();
         return;
     }
-    cout << "Cedula del Propietario: "; cin >> nuevo.cedulaPropietario;
+
+    cout << "Cedula del Propietario: ";
+    cin.getline(nuevo.cedulaPropietario, 20);
     if (esCancelar(nuevo.cedulaPropietario)) {
         cout << "\nRegistro cancelado por el usuario." << endl;
-        cin.ignore(10000, '\n');
-        limpiar();
-        return;
-    }
-    cout << "Telefono del Propietario: "; cin >> nuevo.telefonoPropietario;
-    cout << "Fecha de Registro (YYYY-MM-DD): "; cin >> nuevo.fechaRegistro;
-
-    if (buscarVehiculoPorPlaca(s, nuevo.placa) != nullptr) {
-        cout << "\nERROR: La placa '" << nuevo.placa << "' ya está registrada." << endl;
-        cin.ignore(10000, '\n');
-        limpiar();
         return;
     }
 
-    if (!pedirConfirmacion("\n¿Confirmar el registro del vehículo?")) {
+    cout << "Telefono del Propietario: ";
+    cin.getline(nuevo.telefonoPropietario, 20);
+    if (esCancelar(nuevo.telefonoPropietario)) {
+        cout << "\nRegistro cancelado por el usuario." << endl;
+        return;
+    }
+
+    if (!pedirConfirmacion("\nConfirmar registro del vehiculo?")) {
+        cin.ignore(10000, '\n');
         cout << "\nRegistro cancelado." << endl;
-        cin.ignore(10000, '\n');
-        limpiar();
         return;
-    }
-
-    Vehiculo* creado = agregarVehiculo(s, nuevo);
-    if (creado != nullptr) {
-        cout << "\nVehiculo '" << creado->placa << "' registrado exitosamente con ID #" << creado->id << "." << endl;
-    } else {
-        cout << "\nERROR: No se pudo registrar el vehiculo (verifique los campos anteriores)." << endl;
     }
     cin.ignore(10000, '\n');
-    limpiar();
+
+    int idAsignado = 0;
+    CodigoResultado res = agregarVehiculo(nuevo, idAsignado);
+    mostrarMensajeResultadoVehiculo(res, "Vehiculo registrado exitosamente.");
+    if (res == RES_OK) {
+        cout << "ID asignado: #" << idAsignado << endl;
+    }
 }
     
-void uiBuscarVehiculo(SistemaTaller* s) {
+void uiBuscarVehiculo(){
     limpiar();
     cout << "=== BUSCAR VEHICULO ===" << endl;
-    int op = 0;
-    cout << "Seleccione el modo de busqueda: " << endl;
     cout << "1. Buscar por ID" << endl;
     cout << "2. Buscar por Placa" << endl;
     cout << "3. Buscar por Propietario" << endl;
-    
+    cout << "Seleccione una opcion: ";
+
+    int op = 0;
     if (!(cin >> op)) {
         cin.clear();
         cin.ignore(10000, '\n');
         return;
     }
 
-    switch (op) {
-        case 1:{
-            int idBuscado;
-            cout << "Ingrese un ID registrado: ";
-            if (!(cin >> idBuscado)) { cin.clear(); cin.ignore(10000, '\n'); break; }
+    if (op == 1) {
+        int id = 0;
+        cout << "Ingrese el ID del vehiculo: ";
+        if (!(cin >> id)) {
+            cin.clear();
             cin.ignore(10000, '\n');
-    
-            Vehiculo* ubicado = buscarVehiculoPorID(s, idBuscado);
-            if (ubicado != nullptr) {
-                mostrarVehiculo(ubicado);
-            } else {
-                cout << "\nERROR: No existe ningún vehículo con el ID #" << idBuscado << "."<< endl;
-            }
-            break; 
-        }case 2:{
-            char placaBuscada[10];
-            cout << "Ingrese la placa exacta: ";
-            cin >> placaBuscada;
-            cin.ignore(10000, '\n');
-
-            Vehiculo* ubicado = buscarVehiculoPorPlaca(s, placaBuscada);
-            if (ubicado != nullptr){
-                mostrarVehiculo(ubicado);
-            } else{
-                cout << "\nError: No se encontro ningun vehiculo con la placa '" << placaBuscada << "'." << endl;
-            }
-            break;
-        }case 3:{
-            char subcadena[100];
-            cin.ignore(10000, '\n');
-            cout << "Ingrese parte del nombre del propietario: ";
-            cin.getline(subcadena, 100);
-
-            int cantidad = 0;
-            Vehiculo** resultados = buscarVehiculosPorPropietario(s, subcadena, &cantidad);
-            if (resultados != nullptr){
-                mostrarListaVehiculos(resultados, cantidad);
-                delete[] resultados;
-            } else{
-                cout << "\nNo se encontraron vehiculos con ese propietario." << endl;
-            }
-            break;
-        }default:{
-            cin.ignore(10000, '\n');
-            cout << "\nOpcion validan't." << endl;
-            break;
+            return;
         }
-    } 
-    limpiar();
+        cin.ignore(10000, '\n');
+
+        Vehiculo v{};
+        CodigoResultado res = buscarVehiculoPorID(id, v, nullptr);
+        if (res == RES_OK) {
+            mostrarVehiculo(v);
+        } else {
+            mostrarMensajeResultadoVehiculo(res, "");
+        }
+    } else if (op == 2) {
+        char placa[10];
+        cout << "Ingrese la placa: ";
+        cin >> placa;
+        cin.ignore(10000, '\n');
+
+        Vehiculo v{};
+        CodigoResultado res = buscarVehiculoPorPlaca(placa, v);
+        if (res == RES_OK) {
+            mostrarVehiculo(v);
+        } else {
+            mostrarMensajeResultadoVehiculo(res, "");
+        }
+    } else if (op == 3) {
+        char subcadena[100];
+        cin.ignore(10000, '\n');
+        cout << "Ingrese parte del nombre del propietario: ";
+        cin.getline(subcadena, 100);
+
+        Vehiculo resultados[MAX_RESULTADOS];
+        int cantidad = 0;
+        bool hayMas = false;
+        CodigoResultado res = buscarVehiculosPorPropietario(subcadena, resultados, cantidad, hayMas);
+        if (res == RES_OK) {
+            mostrarListaVehiculos(resultados, cantidad, hayMas);
+        } else {
+            mostrarMensajeResultadoVehiculo(res, "");
+        }
+    } else {
+        cin.ignore(10000, '\n');
+        cout << "\nOpcion invalida." << endl;
+    }
 }
 
-void uiActualizarVehiculos(SistemaTaller* s){
+void uiActualizarVehiculo(){
     limpiar();
     cout << "=== ACTUALIZAR VEHICULO ===" << endl;
-    int id;
-    cout << "Ingrese el ID del vehiculo a actualizar: ";
+    int id = 0;
+    cout << "Ingrese el ID del vehiculo: ";
     if (!(cin >> id)) {
         cin.clear();
         cin.ignore(10000, '\n');
         return;
     }
 
-    Vehiculo* v = buscarVehiculoPorID(s, id);
-    if (v == nullptr){
-        cout << "\nError: No existe un vehiculo registrado con el ID " << id << "." << endl;
+    Vehiculo actual{};
+    CodigoResultado resBusq = buscarVehiculoPorID(id, actual, nullptr);
+    if (resBusq != RES_OK) {
         cin.ignore(10000, '\n');
-        limpiar();
+        mostrarMensajeResultadoVehiculo(resBusq, "");
         return;
     }
 
-    cout << "\nVehiculo actual encontrado: " << endl;
-    mostrarVehiculo(v);
+    cout << "\nVehiculo actual:" << endl;
+    mostrarVehiculo(actual);
 
-    Vehiculo nuevosDatos;
-    cout << "\nIngrese los nuevos datos (Placa y kilometraje no se modifican): " << endl;
-    cout << "Nueva Marca: "; cin >> nuevosDatos.marca;
-    cout << "Nuevo Modelo: "; cin >> nuevosDatos.modelo;
-    cout << "Nuevo anio (1950 - 2027): ";
-    if (!(cin >> nuevosDatos.anio)) { cin.clear(); cin.ignore(10000, '\n'); nuevosDatos.anio = 0; }
-
+    Vehiculo nuevosDatos{};
     cin.ignore(10000, '\n');
-    cout << "Nuevo Nombre del Propietario: "; cin.getline(nuevosDatos.nombrePropietario, 100);
-    cout << "Nueva Cédula del Propietario: "; cin >> nuevosDatos.cedulaPropietario;
-    cout << "Nuevo Teléfono del Propietario: "; cin >> nuevosDatos.telefonoPropietario;
-    
-    if (!pedirConfirmacion("\nConfirmar la actualizacion del vehiculo?")){
-        cout << "\nActualización cancelada." << endl;
+    cout << "Nueva Marca: ";
+    cin.getline(nuevosDatos.marca, 50);
+
+    cout << "Nuevo Modelo: ";
+    cin.getline(nuevosDatos.modelo, 50);
+
+    cout << "Nuevo Anio (1950-2027): ";
+    if (!(cin >> nuevosDatos.anio)) {
+        cin.clear();
         cin.ignore(10000, '\n');
-        limpiar();
-        return; 
+        nuevosDatos.anio = 0;
+    } else {
+        cin.ignore(10000, '\n');
     }
 
-    if (actualizarVehiculo(s, id, nuevosDatos)){
-        cout << "\nVehiculo actualizado sasticfactoriamente." << endl;
-    } else{
-        cout << "\nError: No se pudo actualizar (verifique el año entre 1950-2027) y cédula válida." << endl;
+    cout << "Nuevo Nombre del Propietario: ";
+    cin.getline(nuevosDatos.nombrePropietario, 100);
+
+    cout << "Nueva Cedula del Propietario: ";
+    cin.getline(nuevosDatos.cedulaPropietario, 20);
+
+    cout << "Nuevo Telefono del Propietario: ";
+    cin.getline(nuevosDatos.telefonoPropietario, 20);
+
+    if (!pedirConfirmacion("\nConfirmar actualizacion del vehiculo?")) {
+        cin.ignore(10000, '\n');
+        cout << "\nActualizacion cancelada." << endl;
+        return;
     }
     cin.ignore(10000, '\n');
-    limpiar();
-    
+
+    CodigoResultado resAct = actualizarVehiculo(id, nuevosDatos);
+    mostrarMensajeResultadoVehiculo(resAct, "Vehiculo actualizado exitosamente.");
 }
 
-void uiEliminarVehiculo(SistemaTaller* s){
+void uiEliminarVehiculo(){
     limpiar();
     cout << "=== ELIMINAR VEHICULO ===" << endl;
-    int id;
-    cout << "Ingrese la ID del Vehiculo a eliminar: ";
-    if (!(cin >> id)){
+    int id = 0;
+    cout << "Ingrese el ID del vehiculo a eliminar: ";
+    if (!(cin >> id)) {
         cin.clear();
         cin.ignore(10000, '\n');
         return;
     }
 
-    if (eliminarVehiculo(s, id)){
-        cout << "\nVehiculo eliminado fisicamente del sistema." << endl;
-    } else{
-        cout << "\nNo se pudo eliminar (ID no existe o el vehiculo tiene ordenes de servicio asociadas)." << endl;
+    if (!pedirConfirmacion("\nConfirma dar de baja este vehiculo?")) {
+        cin.ignore(10000, '\n');
+        cout << "\nOperacion cancelada." << endl;
+        return;
     }
     cin.ignore(10000, '\n');
-    limpiar();
+
+    CodigoResultado res = eliminarVehiculo(id);
+    mostrarMensajeResultadoVehiculo(res, "Vehiculo dado de baja correctamente.");
 }
 
-void uiListarVehiculos(SistemaTaller* s){
+void uiListarVehiculos(){
     limpiar();
+    Vehiculo resultados[MAX_RESULTADOS];
     int cantidad = 0;
-    Vehiculo** lista = listarVehiculos(s, &cantidad);
+    bool hayMas = false;
 
-    if (lista != nullptr){
-        mostrarListaVehiculos(lista, cantidad);
-        delete[] lista;
+    CodigoResultado res = listarVehiculos(resultados, cantidad, hayMas);
+    if (res == RES_OK) {
+        mostrarListaVehiculos(resultados, cantidad, hayMas);
     } else {
-        cout << "\nNo hay vehiculos registrados en el sistema." << endl;
+        mostrarMensajeResultadoVehiculo(res, "");
     }
-    cin.ignore(10000, '\n');
-    limpiar();
-}
 
+    cin.ignore(10000, '\n');
+}
+/* jai papa
 //Mecanicos UI
 void menuMecánicos () {
     cout << "╔═══════════════════════════════════════════╗" << endl;
